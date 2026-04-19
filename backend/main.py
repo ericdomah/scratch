@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket
 from pydantic import BaseModel
 import sys
 import os
@@ -30,7 +30,10 @@ from fastapi import Depends
 init_db()
 
 # Initialize engines
-inference_engine = InferenceEngine(model_path='../ml_engine/src/best_model.pth')
+inference_engine = InferenceEngine(
+    dl_model_path='../ml_engine/src/best_model.pth',
+    xgb_model_path='../ml_engine/src/best_xgb.pkl'
+)
 xai_engine = XAIEngine(inference_engine.model)
 
 class PredictionRequest(BaseModel):
@@ -82,6 +85,25 @@ async def explain_theft(request: PredictionRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.websocket("/ws/telemetry")
+async def websocket_telemetry(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        import asyncio, random
+        while True:
+            # Broadcast simulated high-urgency KIB-TEK theft telemetry
+            is_bypass = random.random() > 0.8
+            mock_alert = {
+                "id": f"KIB-TEK-{random.randint(1000, 9999)}",
+                "risk": "high" if is_bypass else "medium",
+                "confidence": (random.random() * 0.2 + 0.8) if is_bypass else (random.random() * 0.3 + 0.5),
+                "status": "pending" if is_bypass else "investigating"
+            }
+            await websocket.send_json(mock_alert)
+            await asyncio.sleep(4) # Push new NTL anomaly every 4 seconds
+    except Exception:
+        pass
 
 if __name__ == "__main__":
     import uvicorn

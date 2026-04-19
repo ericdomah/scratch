@@ -38,6 +38,9 @@ class ElectricityDataset(Dataset):
 
 if __name__ == "__main__":
     # Test Module 3 Integration
-    ds = ElectricityDataset("../data/datasetsmall.csv", transform=True)
+    csv_path = "../../data/datasetsmall.csv"
+    if not os.path.exists(csv_path):
+        csv_path = "../data/datasetsmall.csv"
+    ds = ElectricityDataset(csv_path, transform=True)
     x, y = ds[0]
     print(f"Preprocessed Sample - min: {x.min().item():.2f}, max: {x.max().item():.2f}, label: {y}")

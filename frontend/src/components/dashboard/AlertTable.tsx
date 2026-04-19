@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Search, Filter, ShieldCheck, AlertTriangle, Activity } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, ShieldCheck, AlertTriangle, Activity, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-const mockAlerts = Array.from({ length: 8 }, (_, i) => {
+const mockAlerts = Array.from({ length: 20 }, (_, i) => {
   const isBypass = Math.random() > 0.7;
   return {
-    id: `SGCC-${1042 + i}`,
+    id: `KIB-TEK-${1042 + i}`,
     risk: isBypass ? 'high' : 'medium',
     confidence: isBypass ? (Math.random() * 0.2 + 0.8) : (Math.random() * 0.3 + 0.5),
     status: isBypass ? 'pending' : 'investigating',
@@ -15,11 +17,63 @@ const mockAlerts = Array.from({ length: 8 }, (_, i) => {
 
 export default function AlertTable() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [alerts, setAlerts] = useState(mockAlerts);
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const ws = new WebSocket('ws://localhost:8000/ws/telemetry');
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      data.timestamp = new Date().toISOString();
+      setAlerts(prev => [data, ...prev].slice(0, 25)); // Keep grid clean
+    };
+    return () => ws.close();
+  }, []);
 
   const handleInspect = (meterId: string) => {
     // In a real flow, this could open a modal or route to /investigate/:id
     navigate('/map'); 
+  };
+
+  const exportReport = () => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(0, 0, 0);
+    doc.text("KIB-TEK Grid Security Report", 14, 22);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Official System Audit | TRNC Island-Wide Deployment | 1,500 Meters`, 14, 30);
+    doc.text(`Generated: ${new Date().toLocaleString()} | Source: GridGuard AI Meta-Ensemble`, 14, 35);
+    
+    // Anomaly Table
+    const tableData = alerts.map(a => [
+      a.id,
+      a.risk.toUpperCase(),
+      `${(a.confidence * 100).toFixed(1)}%`,
+      a.status.toUpperCase(),
+      new Date(a.timestamp).toLocaleString()
+    ]);
+    
+    autoTable(doc, {
+      startY: 45,
+      head: [['Meter ID', 'Risk Level', 'AI Confidence', 'Current Status', 'Detection Time']],
+      body: tableData,
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [241, 245, 249] },
+      margin: { top: 45 },
+    });
+    
+    // High-Priority Data-URI Stream to force filename persistence
+    const dataUri = doc.output('datauristring');
+    const link = document.createElement('a');
+    link.href = dataUri;
+    link.download = `KIB_TEK_Anomaly_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -38,7 +92,11 @@ export default function AlertTable() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button className="flex items-center px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-sm text-slate-300 transition-colors font-medium">
+          <button onClick={exportReport} className="flex items-center px-4 py-2 bg-[#00f0ff] hover:bg-[#00f0ff]/80 border border-[#00f0ff] rounded-none text-sm text-black transition-colors font-bold shadow-lg shadow-[#00f0ff]/20 uppercase tracking-wider">
+            <Download className="h-4 w-4 mr-2" />
+            Generate Report
+          </button>
+          <button className="flex items-center px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-none text-sm text-slate-300 transition-colors font-medium">
             <Filter className="h-4 w-4 mr-2 text-slate-400" />
             Filter
           </button>
@@ -59,7 +117,7 @@ export default function AlertTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/80">
-            {mockAlerts.map((alert) => (
+            {alerts.filter(a => a.id.toLowerCase().includes(searchTerm.toLowerCase())).map((alert) => (
               <tr 
                 key={alert.id} 
                 className="hover:bg-slate-800/40 transition-colors cursor-pointer group"

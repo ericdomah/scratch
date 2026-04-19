@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import shap
-from model import HybridLSTMTransformer
+from ensemble_model import GridGuardUniversalHybrid
 
 class XAIEngine:
     def __init__(self, model, device='cpu'):
@@ -39,14 +39,14 @@ if __name__ == "__main__":
     from torch.utils.data import DataLoader
 
     print("--- Testing Module 7: Explainable AI Layer ---")
-    model = HybridLSTMTransformer()
+    model = GridGuardUniversalHybrid()
     xai = XAIEngine(model)
     
     sample_input = torch.randn(1, 20, 1)
     attn_map = xai.get_attention_map(sample_input)
     
-    print(f"✓ Attention map extracted. Shape: {attn_map.shape}")
-    print(f"✓ Max importance at: {np.argmax(attn_map)}")
+    print(f"[OK] Attention map extracted. Shape: {attn_map.shape}")
+    print(f"[OK] Max importance at: {np.argmax(attn_map)}")
     
     assert attn_map.shape == (20,), "Attention map shape mismatch"
-    print("\n✅ Module 7 Verification Complete! XAI foundations are in place.")
+    print("\n[OK] Module 7 Verification Complete! XAI foundations are in place.")

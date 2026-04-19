@@ -16,7 +16,7 @@ class GridGuardTrainer:
         
         # Loss: Using pos_weight to handle class imbalance (common in theft detection)
         # Assuming roughly 9:1 ratio for now, can be tuned
-        self.criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([5.0]).to(device))
+        self.criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([11.0]).to(device))
         self.optimizer = optim.AdamW(self.model.parameters(), lr=0.001)
         self.history = {'train_loss': [], 'val_loss': [], 'val_f1': []}
 
@@ -76,27 +76,32 @@ class GridGuardTrainer:
             if f1 > best_f1:
                 best_f1 = f1
                 torch.save(self.model.state_dict(), save_path)
-                print(f"  ⭐ Best model saved with F1: {f1:.4f}")
+                print(f"  [BEST] Best model saved with F1: {f1:.4f}")
         return self.history
 
 if __name__ == "__main__":
-    # Test script for Trainer (Small scale)
-    from model import HybridLSTMTransformer
+    # Full Training Run for Super-Hybrid
+    from ensemble_model import GridGuardUniversalHybrid
     from data_loader import ElectricityDataset
     
-    csv_path = "../data/datasetsmall.csv"
-    dataset = ElectricityDataset(csv_path, window_size=20)
+    csv_path = "../../data/datasetsmall.csv"
+    if not os.path.exists(csv_path):
+        csv_path = "../data/datasetsmall.csv"
+        
+    dataset = ElectricityDataset(csv_path, window_size=30)
     
     # Split into train/val
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
     train_ds, val_ds = torch.utils.data.random_split(dataset, [train_size, val_size])
     
-    train_loader = DataLoader(train_ds, batch_size=4, shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=4)
+    train_loader = DataLoader(train_ds, batch_size=32, shuffle=True)
+    val_loader = DataLoader(val_ds, batch_size=32)
     
-    model = HybridLSTMTransformer()
-    trainer = GridGuardTrainer(model, train_loader, val_loader)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = GridGuardUniversalHybrid()
+    trainer = GridGuardTrainer(model, train_loader, val_loader, device=device)
     
-    print("Starting small-scale training test...")
-    trainer.train(epochs=2)
+    print(f"Starting GridGuard Super-Hybrid Training on {device}...")
+    trainer.train(epochs=10, save_path='best_model.pth')
+    print("[OK] Training complete. Model saved to best_model.pth")

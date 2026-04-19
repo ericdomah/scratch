@@ -2,7 +2,8 @@ import React from 'react';
 import KPICards from '../components/dashboard/KPICards';
 import AlertTable from '../components/dashboard/AlertTable';
 import WhatIfSimulator from '../components/dashboard/WhatIfSimulator';
-import { Activity, ShieldCheck, Terminal } from 'lucide-react';
+import GeospatialMap from './GeospatialMap';
+import { Activity, ShieldCheck, Terminal, MapPin } from 'lucide-react';
 
 export default function Dashboard() {
   return (
@@ -30,29 +31,43 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Brutalist Bento Grid Architecture */}
-      <div className="grid grid-cols-12 grid-rows-[auto_1fr] gap-4 flex-1 h-[calc(100vh-140px)]">
+      {/* Brutalist Bento Grid Architecture (Now scrollable for Map) */}
+      <div className="grid grid-cols-12 gap-5 flex-1 overflow-y-auto pb-10 pr-2 custom-scrollbar">
         
         {/* KPI Top Row (Spans all columns) */}
         <div className="col-span-12">
           <KPICards />
         </div>
 
-        {/* Lower Left Block: WhatIf Simulator (Spans 5 columns) */}
-        <div className="col-span-12 lg:col-span-5 h-full">
+        {/* Central Map Array (Spans 8 columns) */}
+        <div className="col-span-12 xl:col-span-8 h-[550px] flex flex-col">
+          <div className="flex items-center justify-between mb-3 border-b border-[#1e293b] pb-2">
+            <h3 className="text-xs uppercase font-bold text-slate-400 flex items-center tracking-widest">
+              <MapPin className="h-4 w-4 mr-2 text-rose-500" />
+              Live TRNC Substation Map
+            </h3>
+            <span className="text-[10px] bg-[#1e293b] text-slate-400 px-2 py-0.5 rounded-sm">KIB-TEK TOPOLOGY</span>
+          </div>
+          <div className="flex-1 rounded-none border border-[#1e293b]">
+            <GeospatialMap />
+          </div>
+        </div>
+
+        {/* Right Block: WhatIf Simulator (Spans 4 columns) */}
+        <div className="col-span-12 xl:col-span-4 h-[550px] flex flex-col">
           <WhatIfSimulator />
         </div>
 
-        {/* Lower Right Block: Telemetry Matrix (AlertTable) (Spans 7 cols) */}
-        <div className="col-span-12 lg:col-span-7 h-full flex flex-col pt-1">
-          <div className="flex items-center justify-between mb-2">
+        {/* Lower Row: Telemetry Matrix (AlertTable) (Spans all cols) */}
+        <div className="col-span-12 h-[600px] flex flex-col pt-4">
+          <div className="flex items-center justify-between mb-3 border-b border-[#1e293b] pb-2">
             <h3 className="text-xs uppercase font-bold text-slate-400 flex items-center tracking-widest">
               <Terminal className="h-4 w-4 mr-2 text-[#00f0ff]" />
               Real-Time Security Matrix
             </h3>
-            <span className="text-[10px] text-[#00f0ff] uppercase tracking-widest">LIVE DATA FEED</span>
+            <span className="text-[10px] text-[#00f0ff] uppercase tracking-widest animate-pulse">LIVE DATA FEED</span>
           </div>
-          <div className="flex-1 overflow-hidden border border-[#1e293b]">
+          <div className="flex-1 overflow-hidden border border-[#1e293b] rounded-none">
             <AlertTable />
           </div>
         </div>

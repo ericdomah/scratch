@@ -3,10 +3,10 @@ import { Activity, ShieldAlert, Users, Zap } from 'lucide-react';
 
 export default function KPICards() {
   const kpis = [
-    { title: 'Total Meters', value: '450', icon: Users, color: 'text-[#00f0ff]' },
-    { title: 'Theft Alerts', value: '23', icon: ShieldAlert, color: 'text-red-500' },
-    { title: 'Investigations', value: '8', icon: Activity, color: 'text-amber-500' },
-    { title: 'Avg Confidence', value: '94.2%', icon: Zap, color: 'text-emerald-500' },
+    { title: 'Total Meters', value: '1,500', icon: Users, color: 'text-[#00f0ff]' },
+    { title: 'Theft Alerts', value: '77', icon: ShieldAlert, color: 'text-red-500' },
+    { title: 'Investigations', value: '26', icon: Activity, color: 'text-amber-500' },
+    { title: 'Est. Loss (Monthly)', value: '₺821,500', icon: Zap, color: 'text-emerald-500' },
   ];
 
   return (

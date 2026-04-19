@@ -41,3 +41,29 @@ class XGBoostBaseline:
     def load_model(self, filepath):
         with open(filepath, 'rb') as f:
             self.model = pickle.load(f)
+if __name__ == "__main__":
+    import torch
+    import os
+    from data_loader import ElectricityDataset
+    
+    print("Training XGBoost Baseline...")
+    csv_path = "../../data/datasetsmall.csv"
+    if not os.path.exists(csv_path):
+        csv_path = "../data/datasetsmall.csv"
+        
+    dataset = ElectricityDataset(csv_path, window_size=30)
+    
+    # Load all data for XGBoost (CPU-friendly)
+    X_list, y_list = [], []
+    for i in range(len(dataset)):
+        x, y = dataset[i]
+        X_list.append(x)
+        y_list.append(y)
+    
+    X = torch.stack(X_list)
+    y = torch.stack(y_list)
+    
+    model = XGBoostBaseline()
+    model.train(X, y)
+    model.save_model("best_xgb.pkl")
+    print("[OK] XGBoost model trained and saved to best_xgb.pkl")

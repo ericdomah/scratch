@@ -5,14 +5,31 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import SidePanel from '../components/map/SidePanel';
 
-// Mock smart meter generation representing SGCC dataset context
-const mockMeters = Array.from({ length: 450 }, (_, i) => {
+const mockMeters = Array.from({ length: 1500 }, (_, i) => {
   const isBypass = Math.random() > 0.95; // 5% high risk
   const isWarning = !isBypass && Math.random() > 0.85; // 10% medium risk
+  
+  // Strict Inland TRNC Topological Bounding Boxes to guarantee zero ocean spillage
+  const r = Math.random();
+  let lat, lng;
+  if (r < 0.45) { 
+    // Central Inland Safe-corridor (Lefkoşa to Güzelyurt) 
+    lat = 35.18 + (Math.random() * 0.07); 
+    lng = 32.95 + (Math.random() * 0.35); 
+  } else if (r < 0.80) { 
+    // Eastern Inland Plains (Geçitkale to Mağusa)
+    lat = 35.15 + (Math.random() * 0.12); 
+    lng = 33.40 + (Math.random() * 0.45); 
+  } else { 
+    // Karpaz Peninsula (Extremely thin safe line to trace the land bridge)
+    lng = 34.00 + (Math.random() * 0.45); 
+    lat = 35.33 + ((lng - 34.0) / 0.45) * 0.28 + (Math.random() * 0.03 - 0.015);
+  }
+
   return {
-    id: `SGCC-${Math.floor(1000 + Math.random() * 9000)}-${i}`,
-    lat: 39.9042 + (Math.random() - 0.5) * 0.3, // Beijing area coordinates
-    lng: 116.4074 + (Math.random() - 0.5) * 0.3,
+    id: `KIB-TEK-${Math.floor(1000 + Math.random() * 9000)}-${i}`,
+    lat,
+    lng,
     risk: isBypass ? 'high' : isWarning ? 'medium' : 'low',
     confidence: isBypass ? Math.random() * 0.4 + 0.6 : Math.random() * 0.5,
     status: isBypass ? (Math.random() > 0.5 ? 'investigating' : 'pending') : 'cleared'
@@ -38,11 +55,11 @@ export default function GeospatialMap() {
   const [selectedMeter, setSelectedMeter] = useState<any>(null);
 
   return (
-    <div className="flex h-[calc(100vh-130px)] border border-slate-800 rounded-xl overflow-hidden relative shadow-2xl">
+    <div className="flex h-full min-h-[500px] w-full border border-slate-800 rounded-xl overflow-hidden relative shadow-2xl">
       <div className="flex-1 relative bg-slate-900 z-0">
         <MapContainer 
-          center={[39.9042, 116.4074]} 
-          zoom={11} 
+          center={[35.25, 33.3]} 
+          zoom={9} 
           className="w-full h-full z-0"
           zoomControl={false}
         >
