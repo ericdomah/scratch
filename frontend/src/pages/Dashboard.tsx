@@ -2,6 +2,7 @@ import React from 'react';
 import KPICards from '../components/dashboard/KPICards';
 import AlertTable from '../components/dashboard/AlertTable';
 import WhatIfSimulator from '../components/dashboard/WhatIfSimulator';
+import ForensicPanel from '../components/dashboard/ForensicPanel';
 import GeospatialMap from './GeospatialMap';
 import { Activity, ShieldCheck, Terminal, MapPin } from 'lucide-react';
 
@@ -56,6 +57,11 @@ export default function Dashboard() {
         {/* Right Block: WhatIf Simulator (Spans 4 columns) */}
         <div className="col-span-12 xl:col-span-4 h-[550px] flex flex-col">
           <WhatIfSimulator />
+        </div>
+
+        {/* Forensic Analytics Row (Full Width) */}
+        <div className="col-span-12 pt-4">
+          <ForensicPanel />
         </div>
 
         {/* Lower Row: Telemetry Matrix (AlertTable) (Spans all cols) */}
