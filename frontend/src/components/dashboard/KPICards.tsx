@@ -1,12 +1,15 @@
 import React from 'react';
 import { Activity, ShieldAlert, Users, Zap } from 'lucide-react';
+import { useGridStore } from '../../store/gridStore';
 
 export default function KPICards() {
+  const { totalMeters, theftAlerts, investigations, estimatedLoss } = useGridStore();
+
   const kpis = [
-    { title: 'Total Meters', value: '1,500', icon: Users, color: 'text-[#00f0ff]' },
-    { title: 'Theft Alerts', value: '77', icon: ShieldAlert, color: 'text-red-500' },
-    { title: 'Investigations', value: '26', icon: Activity, color: 'text-amber-500' },
-    { title: 'Est. Loss (Monthly)', value: '₺821,500', icon: Zap, color: 'text-emerald-500' },
+    { title: 'Total Meters', value: totalMeters.toLocaleString(), icon: Users, color: 'text-[#00f0ff]' },
+    { title: 'Theft Alerts', value: theftAlerts.toString(), icon: ShieldAlert, color: 'text-red-500' },
+    { title: 'Investigations', value: investigations.toString(), icon: Activity, color: 'text-amber-500' },
+    { title: 'Est. Loss (Monthly)', value: `₺${estimatedLoss.toLocaleString()}`, icon: Zap, color: 'text-emerald-500' },
   ];
 
   return (

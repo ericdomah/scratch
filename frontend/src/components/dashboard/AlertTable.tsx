@@ -4,34 +4,26 @@ import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const mockAlerts = Array.from({ length: 20 }, (_, i) => {
-  const isBypass = Math.random() > 0.7;
-  return {
-    id: `KIB-TEK-${1042 + i}`,
-    risk: isBypass ? 'high' : 'medium',
-    confidence: isBypass ? (Math.random() * 0.2 + 0.8) : (Math.random() * 0.3 + 0.5),
-    status: isBypass ? 'pending' : 'investigating',
-    timestamp: new Date(Date.now() - Math.random() * 86400000 * (i+1)).toISOString()
-  };
-});
+import { useGridStore } from '../../store/gridStore';
 
 export default function AlertTable() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [alerts, setAlerts] = useState(mockAlerts);
+  const { liveAlerts, addLiveAlert, incrementInvestigations, setSelectedMeterId } = useGridStore();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const ws = new WebSocket('ws://localhost:8000/ws/telemetry');
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       data.timestamp = new Date().toISOString();
-      setAlerts(prev => [data, ...prev].slice(0, 25)); // Keep grid clean
+      addLiveAlert(data);
     };
     return () => ws.close();
-  }, []);
+  }, [addLiveAlert]);
 
   const handleInspect = (meterId: string) => {
-    // In a real flow, this could open a modal or route to /investigate/:id
+    setSelectedMeterId(meterId);
+    incrementInvestigations();
     navigate('/map'); 
   };
 
@@ -117,7 +109,7 @@ export default function AlertTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/80">
-            {alerts.filter(a => a.id.toLowerCase().includes(searchTerm.toLowerCase())).map((alert) => (
+            {liveAlerts.filter(a => a.id.toLowerCase().includes(searchTerm.toLowerCase())).map((alert) => (
               <tr 
                 key={alert.id} 
                 className="hover:bg-slate-800/40 transition-colors cursor-pointer group"

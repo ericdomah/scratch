@@ -7,9 +7,10 @@ import Login from './pages/Login';
 import GeospatialMap from './pages/GeospatialMap';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
+import Investigations from './pages/Investigations';
 
-// Placeholder Pages
-const Alerts = () => <div className="p-6"><h2 className="text-2xl font-bold">Alerts</h2><p className="text-slate-400 mt-2">Tabular alert view goes here.</p></div>;
+import Alerts from './pages/Alerts';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -24,8 +25,8 @@ function App() {
             <Route path="map" element={<GeospatialMap />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="analytics" element={<Analytics />} />
-            <Route path="investigations" element={<div className="p-6 text-xl">Investigations</div>} />
-            <Route path="settings" element={<div className="p-6 text-xl">Settings</div>} />
+            <Route path="investigations" element={<Investigations />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
         </Route>
       </Routes>

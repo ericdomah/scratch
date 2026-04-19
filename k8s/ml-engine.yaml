@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gridguard-ml-engine
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gridguard-ml-engine
+  template:
+    metadata:
+      labels:
+        app: gridguard-ml-engine
+    spec:
+      containers:
+      - name: ml-engine
+        image: gridguard-ml-engine:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8001
+        resources:
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-engine-service
+spec:
+  type: ClusterIP
+  selector:
+    app: gridguard-ml-engine
+  ports:
+    - protocol: TCP
+      port: 8001
+      targetPort: 8001

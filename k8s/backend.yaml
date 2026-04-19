@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gridguard-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: gridguard-backend
+  template:
+    metadata:
+      labels:
+        app: gridguard-backend
+    spec:
+      containers:
+      - name: backend
+        image: gridguard-backend:latest
+        imagePullPolicy: Never # Local testing
+        env:
+        - name: DB_HOST
+          value: "db-service"
+        - name: ML_ENGINE_URL
+          value: "http://ml-engine-service:8001"
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  type: ClusterIP
+  selector:
+    app: gridguard-backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

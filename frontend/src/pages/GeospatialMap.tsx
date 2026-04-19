@@ -1,40 +1,11 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import SidePanel from '../components/map/SidePanel';
-
-const mockMeters = Array.from({ length: 1500 }, (_, i) => {
-  const isBypass = Math.random() > 0.95; // 5% high risk
-  const isWarning = !isBypass && Math.random() > 0.85; // 10% medium risk
-  
-  // Strict Inland TRNC Topological Bounding Boxes to guarantee zero ocean spillage
-  const r = Math.random();
-  let lat, lng;
-  if (r < 0.45) { 
-    // Central Inland Safe-corridor (Lefkoşa to Güzelyurt) 
-    lat = 35.18 + (Math.random() * 0.07); 
-    lng = 32.95 + (Math.random() * 0.35); 
-  } else if (r < 0.80) { 
-    // Eastern Inland Plains (Geçitkale to Mağusa)
-    lat = 35.15 + (Math.random() * 0.12); 
-    lng = 33.40 + (Math.random() * 0.45); 
-  } else { 
-    // Karpaz Peninsula (Extremely thin safe line to trace the land bridge)
-    lng = 34.00 + (Math.random() * 0.45); 
-    lat = 35.33 + ((lng - 34.0) / 0.45) * 0.28 + (Math.random() * 0.03 - 0.015);
-  }
-
-  return {
-    id: `KIB-TEK-${Math.floor(1000 + Math.random() * 9000)}-${i}`,
-    lat,
-    lng,
-    risk: isBypass ? 'high' : isWarning ? 'medium' : 'low',
-    confidence: isBypass ? Math.random() * 0.4 + 0.6 : Math.random() * 0.5,
-    status: isBypass ? (Math.random() > 0.5 ? 'investigating' : 'pending') : 'cleared'
-  };
-});
+import { globalMeters } from '../services/dataService';
+import { useGridStore } from '../store/gridStore';
 
 // Custom DOM icon factory for Risk statuses
 const createRiskIcon = (risk: string) => {
@@ -51,8 +22,28 @@ const createRiskIcon = (risk: string) => {
   });
 };
 
+function MapController({ selectedMeterId, setSelectedMeter }: { selectedMeterId: string | null, setSelectedMeter: (m: any) => void }) {
+  const map = useMap();
+  const { setSelectedMeterId } = useGridStore();
+
+  useEffect(() => {
+    if (selectedMeterId) {
+      const meter = globalMeters.find(m => m.id === selectedMeterId);
+      if (meter) {
+        map.flyTo([meter.lat, meter.lng], 16, { duration: 2 });
+        setSelectedMeter(meter);
+        // Clean up the store state so it doesn't re-trigger on subsequent visits
+        setTimeout(() => setSelectedMeterId(null), 3000);
+      }
+    }
+  }, [selectedMeterId, map, setSelectedMeter, setSelectedMeterId]);
+
+  return null;
+}
+
 export default function GeospatialMap() {
   const [selectedMeter, setSelectedMeter] = useState<any>(null);
+  const { selectedMeterId } = useGridStore();
 
   return (
     <div className="flex h-full min-h-[500px] w-full border border-slate-800 rounded-xl overflow-hidden relative shadow-2xl">
@@ -63,7 +54,8 @@ export default function GeospatialMap() {
           className="w-full h-full z-0"
           zoomControl={false}
         >
-          {/* Deep dark enterprise map style via Carto CartoDB */}
+          <MapController selectedMeterId={selectedMeterId} setSelectedMeter={setSelectedMeter} />
+          
           <TileLayer
             attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -72,7 +64,7 @@ export default function GeospatialMap() {
             chunkedLoading
             maxClusterRadius={50}
           >
-            {mockMeters.map((meter) => (
+            {globalMeters.map((meter) => (
               <Marker 
                 key={meter.id} 
                 position={[meter.lat, meter.lng]}

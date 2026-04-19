@@ -13,7 +13,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return twMerge(clsx(...inputs));
 }
 
 const navItems = [
@@ -27,7 +27,7 @@ const navItems = [
 
 export default function Sidebar() {
   return (
-    <aside className="w-64 bg-[#050505] border-r border-[#1e293b] text-slate-300 flex flex-col h-screen font-mono fixed left-0 top-0">
+    <aside className="w-64 bg-[#050505] border-r border-[#1e293b] text-slate-300 flex flex-col h-screen font-mono shrink-0 sticky top-0">
       <div className="h-16 flex items-center px-6 border-b border-[#1e293b] bg-[#000000]">
         <Zap className="h-6 w-6 text-blue-500 mr-2" />
         <span className="font-bold text-lg text-white tracking-wide">GridGuard AI</span>

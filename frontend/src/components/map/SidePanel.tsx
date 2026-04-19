@@ -14,6 +14,7 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAuthStore } from '../../store/authStore';
+import { useGridStore } from '../../store/gridStore';
 
 interface SidePanelProps {
   meter: any;
@@ -22,8 +23,34 @@ interface SidePanelProps {
 
 export default function SidePanel({ meter, onClose }: SidePanelProps) {
   const { user } = useAuthStore();
+  const { incrementInvestigations } = useGridStore();
   const [isPoweredOn, setIsPoweredOn] = useState(true);
+  const [isCommandPending, setIsCommandPending] = useState(false);
+  const [commandLog, setCommandLog] = useState<string[]>([]);
   const isAdmin = user?.role === 'Admin';
+
+  const handlePowerToggle = async () => {
+    setIsCommandPending(true);
+    setCommandLog([]);
+    
+    const logs = [
+      `Initializing KIB-TEK Secure Protocol...`,
+      `Connecting to Meter Node ID: ${meter.id}`,
+      `Handshake success. Encryption: AES-256`,
+      `Sending REMOTE_${isPoweredOn ? 'OFF' : 'ON'} packet...`,
+      `Waiting for PLC relay acknowledgement...`,
+      `ACK received. State synced.`
+    ];
+
+    for (const msg of logs) {
+      setCommandLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    setIsPoweredOn(!isPoweredOn);
+    setIsCommandPending(false);
+    incrementInvestigations();
+  };
   
   if (!meter) return null;
 
@@ -194,6 +221,20 @@ export default function SidePanel({ meter, onClose }: SidePanelProps) {
           </p>
         </div>
 
+        {commandLog.length > 0 && (
+          <div className="mt-4 bg-black border border-slate-800 p-2 rounded font-mono text-[10px] text-emerald-500 overflow-hidden">
+            <div className="flex justify-between items-center mb-1 border-b border-slate-900 pb-1">
+              <span className="text-slate-500">KIB-TEK Command Terminal</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+            {commandLog.map((log, i) => (
+              <div key={i} className="whitespace-nowrap overflow-hidden text-ellipsis">
+                {log}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="mt-6 flex space-x-3">
           <button 
             onClick={exportMeterReport}
@@ -205,15 +246,21 @@ export default function SidePanel({ meter, onClose }: SidePanelProps) {
           
           {isAdmin ? (
             <button 
-              onClick={() => setIsPoweredOn(!isPoweredOn)}
+              onClick={handlePowerToggle}
+              disabled={isCommandPending}
               className={`flex-1 py-1.5 rounded-md text-sm font-bold border transition-all flex items-center justify-center ${
+                isCommandPending ? 'opacity-50 cursor-wait' :
                 isPoweredOn 
                   ? 'bg-red-600/10 hover:bg-red-600/30 text-red-500 border-red-500/30' 
                   : 'bg-emerald-600/10 hover:bg-emerald-600/30 text-emerald-500 border-emerald-500/30'
               }`}
             >
-              {isPoweredOn ? <PowerOff className="h-4 w-4 mr-2" /> : <Power className="h-4 w-4 mr-2" />}
-              {isPoweredOn ? 'Shutoff' : 'Restore'}
+              {isCommandPending ? (
+                <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></span>
+              ) : (
+                isPoweredOn ? <PowerOff className="h-4 w-4 mr-2" /> : <Power className="h-4 w-4 mr-2" />
+              )}
+              {isCommandPending ? 'Executing...' : (isPoweredOn ? 'Shutoff' : 'Restore')}
             </button>
           ) : (
             <button 
