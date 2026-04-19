@@ -1,31 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, Legend, LineChart, Line, AreaChart, Area
+  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
 } from 'recharts';
 import { TrendingUp, PieChart as PieIcon, Map as MapIcon, Clock, DollarSign } from 'lucide-react';
-
-const RECOVERY_DATA = [
-  { month: 'Jan', amount: 420000 },
-  { month: 'Feb', amount: 510000 },
-  { month: 'Mar', amount: 480000 },
-  { month: 'Apr', amount: 620000 },
-  { month: 'May', amount: 750000 },
-  { month: 'Jun', amount: 890000 },
-];
-
-const LOSS_DECOMPOSITION = [
-  { name: 'Technical Loss', value: 35, color: '#64748b' },
-  { name: 'Non-Technical (Theft)', value: 65, color: '#f43f5e' },
-];
-
-const DISTRICT_RISK = [
-  { district: 'Lefkoşa', theftRate: '12.4%', risk: 'High', color: 'text-red-500' },
-  { district: 'Girne', theftRate: '8.2%', risk: 'Medium', color: 'text-amber-500' },
-  { district: 'Gazimağusa', theftRate: '14.1%', risk: 'Critical', color: 'text-rose-600' },
-  { district: 'Güzelyurt', theftRate: '5.4%', risk: 'Low', color: 'text-emerald-500' },
-  { district: 'İskele', theftRate: '9.8%', risk: 'Medium', color: 'text-amber-500' },
-];
+import { useGridStore } from '../../store/gridStore';
 
 const TEMPORAL_PATTERN = [
   { hour: '00', prob: 20 }, { hour: '02', prob: 85 }, { hour: '04', prob: 95 },
@@ -35,20 +14,63 @@ const TEMPORAL_PATTERN = [
 ];
 
 export default function ForensicPanel() {
+  const { liveAlerts } = useGridStore();
+
+  // Dynamic Calculation: District Risk
+  const districtRanking = useMemo(() => {
+    const districts: Record<string, number> = {};
+    liveAlerts.forEach(alert => {
+      const d = (alert as any).district || 'Unknown';
+      districts[d] = (districts[d] || 0) + 1;
+    });
+
+    return Object.entries(districts)
+      .map(([name, count]) => ({
+        name,
+        count,
+        risk: count > 10 ? 'Critical' : count > 5 ? 'High' : 'Medium',
+        color: count > 10 ? 'text-rose-600' : count > 5 ? 'text-red-500' : 'text-amber-500'
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [liveAlerts]);
+
+  // Dynamic Calculation: Loss Decomposition
+  const totalMeters = 1500;
+  const highRiskCount = liveAlerts.filter(a => a.risk === 'high').length;
+  const theftLossPercent = ((highRiskCount / totalMeters) * 100).toFixed(1);
+  const technicalLossPercent = 5.2; // Fixed baseline technical loss for TRNC grid
+
+  const lossData = [
+    { name: 'Technical Loss', value: parseFloat(technicalLossPercent.toString()), color: '#64748b' },
+    { name: 'Non-Technical (Theft)', value: parseFloat(theftLossPercent), color: '#f43f5e' },
+  ];
+
+  // Dynamic Calculation: Annual Recovery Forecast
+  const estRecovery = (highRiskCount * 4200 * 1.5).toLocaleString(); // $4200 avg recovery per theft unit
+
+  const recoveryChartData = [
+    { month: 'Jan', amount: highRiskCount * 450 },
+    { month: 'Feb', amount: highRiskCount * 510 },
+    { month: 'Mar', amount: highRiskCount * 480 },
+    { month: 'Apr', amount: highRiskCount * 620 },
+    { month: 'May', amount: highRiskCount * 750 },
+    { month: 'Jun', amount: highRiskCount * 890 },
+  ];
+
   return (
     <div className="bg-[#050505] border border-[#1e293b] p-6 font-mono">
       <div className="flex items-center justify-between mb-8 border-b border-[#1e293b] pb-4">
         <div>
           <h2 className="text-sm font-black text-white uppercase tracking-[0.2em] flex items-center">
             <TrendingUp className="h-4 w-4 mr-2 text-[#00f0ff]" />
-            Grid Financial & Forensic Analytics
+            Grid Financial & Forensic Analytics (LIVE)
           </h2>
-          <p className="text-[10px] text-slate-500 mt-1 uppercase">Advanced Recovery Forecasting | TRNC Island-Wide Profile</p>
+          <p className="text-[10px] text-slate-500 mt-1 uppercase">Reactive Recovery Forecasting | Synced to AI Detection Engine</p>
         </div>
         <div className="flex space-x-4">
           <div className="text-right">
             <p className="text-[9px] text-slate-500 uppercase">Est. Annual Recovery</p>
-            <p className="text-lg font-black text-[#00f0ff]">$8.42M</p>
+            <p className="text-lg font-black text-[#00f0ff]">${estRecovery}</p>
           </div>
         </div>
       </div>
@@ -59,11 +81,11 @@ export default function ForensicPanel() {
         <div className="col-span-12 lg:col-span-4 space-y-4">
           <div className="flex items-center space-x-2 mb-2">
             <DollarSign className="h-3 w-3 text-slate-500" />
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Revenue Recovery Forecast</h3>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Recovery Forecast ($)</h3>
           </div>
           <div className="h-[200px] w-full bg-[#0a0a0a] border border-[#1e293b] p-2">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={RECOVERY_DATA}>
+              <BarChart data={recoveryChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                 <XAxis dataKey="month" stroke="#475569" fontSize={9} tickLine={false} axisLine={false} />
                 <YAxis hide />
@@ -87,13 +109,13 @@ export default function ForensicPanel() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={LOSS_DECOMPOSITION}
+                  data={lossData}
                   innerRadius={60}
                   outerRadius={80}
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {LOSS_DECOMPOSITION.map((entry, index) => (
+                  {lossData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -104,7 +126,7 @@ export default function ForensicPanel() {
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-[10px] text-slate-500 uppercase font-bold">Total Loss</span>
-              <span className="text-xl font-black text-white">18.4%</span>
+              <span className="text-xl font-black text-white">{(parseFloat(theftLossPercent) + technicalLossPercent).toFixed(1)}%</span>
             </div>
           </div>
         </div>
@@ -113,22 +135,22 @@ export default function ForensicPanel() {
         <div className="col-span-12 lg:col-span-5 space-y-4">
           <div className="flex items-center space-x-2 mb-2">
             <MapIcon className="h-3 w-3 text-slate-500" />
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">District Risk ranking</h3>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live District Risk Ranking</h3>
           </div>
           <div className="bg-[#0a0a0a] border border-[#1e293b] overflow-hidden">
             <table className="w-full text-left">
               <thead className="bg-[#0f172a] text-[9px] uppercase font-bold text-slate-500 border-b border-[#1e293b]">
                 <tr>
                   <th className="px-4 py-2">District</th>
-                  <th className="px-4 py-2">Theft Rate</th>
+                  <th className="px-4 py-2">Active Alerts</th>
                   <th className="px-4 py-2 text-right">Risk Level</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1e293b]">
-                {DISTRICT_RISK.map((d, i) => (
+                {districtRanking.map((d, i) => (
                   <tr key={i} className="hover:bg-white/5 transition-colors">
-                    <td className="px-4 py-2 text-[10px] font-bold text-slate-300">{d.district}</td>
-                    <td className="px-4 py-2 text-[10px] font-mono text-[#00f0ff]">{d.theftRate}</td>
+                    <td className="px-4 py-2 text-[10px] font-bold text-slate-300">{d.name}</td>
+                    <td className="px-4 py-2 text-[10px] font-mono text-[#00f0ff]">{d.count}</td>
                     <td className={`px-4 py-2 text-[9px] font-black uppercase text-right ${d.color}`}>{d.risk}</td>
                   </tr>
                 ))}
@@ -170,3 +192,4 @@ export default function ForensicPanel() {
     </div>
   );
 }
+

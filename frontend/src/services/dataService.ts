@@ -5,20 +5,13 @@ export const generateMeters = (count: number) => {
     
     // Precise TRNC City Clustering to guarantee 100% landmass placement
     const CITIES = [
-      // Lefkoşa (Central, safe all around)
-      { weight: 0.35, lat: 35.1856, lng: 33.3823, varLat: [-0.04, 0.04], varLng: [-0.06, 0.06] },
-      // Girne (North Coast, must only vary SOUTH and slightly east/west)
-      { weight: 0.20, lat: 35.3325, lng: 33.3166, varLat: [-0.04, 0.00], varLng: [-0.08, 0.08] },
-      // Gazimağusa (East Coast, must only vary WEST and slightly north/south)
-      { weight: 0.15, lat: 35.1149, lng: 33.9392, varLat: [-0.03, 0.03], varLng: [-0.06, 0.00] },
-      // Güzelyurt (West Coast, must only vary EAST and slightly north/south)
-      { weight: 0.10, lat: 35.1997, lng: 32.9915, varLat: [-0.03, 0.03], varLng: [0.00, 0.05] },
-      // İskele (Inland East)
-      { weight: 0.10, lat: 35.2869, lng: 33.8881, varLat: [-0.03, 0.03], varLng: [-0.04, 0.04] },
-      // Lefke (Deep West)
-      { weight: 0.05, lat: 35.1119, lng: 32.8483, varLat: [-0.01, 0.02], varLng: [0.00, 0.03] },
-      // Karpaz Peninsula (Extremely thin strip, varying southwest)
-      { weight: 0.05, lat: 35.5997, lng: 34.3822, varLat: [-0.04, 0.00], varLng: [-0.15, 0.00] }
+      { name: 'Lefkoşa', weight: 0.35, lat: 35.1856, lng: 33.3823, varLat: [-0.04, 0.04], varLng: [-0.06, 0.06] },
+      { name: 'Girne', weight: 0.20, lat: 35.3325, lng: 33.3166, varLat: [-0.04, 0.00], varLng: [-0.08, 0.08] },
+      { name: 'Gazimağusa', weight: 0.15, lat: 35.1149, lng: 33.9392, varLat: [-0.03, 0.03], varLng: [-0.06, 0.00] },
+      { name: 'Güzelyurt', weight: 0.10, lat: 35.1997, lng: 32.9915, varLat: [-0.03, 0.03], varLng: [0.00, 0.05] },
+      { name: 'İskele', weight: 0.10, lat: 35.2869, lng: 33.8881, varLat: [-0.03, 0.03], varLng: [-0.04, 0.04] },
+      { name: 'Lefke', weight: 0.05, lat: 35.1119, lng: 32.8483, varLat: [-0.01, 0.02], varLng: [0.00, 0.03] },
+      { name: 'Karpaz', weight: 0.05, lat: 35.5997, lng: 34.3822, varLat: [-0.04, 0.00], varLng: [-0.15, 0.00] }
     ];
 
     const r = Math.random();
@@ -41,6 +34,7 @@ export const generateMeters = (count: number) => {
       id: `KIB-TEK-${1000 + i}`,
       lat,
       lng,
+      district: selectedCity.name,
       risk: isBypass ? 'high' : isWarning ? 'medium' : 'low',
       confidence: isBypass ? Math.random() * 0.4 + 0.6 : Math.random() * 0.5,
       status: isBypass ? (Math.random() > 0.5 ? 'investigating' : 'pending') : 'cleared',
