@@ -5,6 +5,8 @@
 **Author:** [USER_NAME]  
 **Date:** April 2026
 
+---
+
 ## Abstract
 Electricity theft remains a critical challenge for utility providers globally, particularly in island-grid environments like the Turkish Republic of Northern Cyprus (TRNC). This thesis presents **GridGuard AI**, a novel meta-ensemble framework that integrates the sequential modeling of Long Short-Term Memory (LSTM) networks with the global attention mechanisms of Transformers and the robust gradient boosting of XGBoost. By leveraging a high-fidelity topological simulation of the KIB-TEK distribution network, this study demonstrates a 94.2% detection accuracy (F1-score) and introduces a real-time WebSocket-based telemetry dashboard with XAI-driven diagnostic reports.
 
@@ -18,6 +20,7 @@ In the TRNC, KIB-TEK faces significant non-technical losses (NTL) due to meter t
 - Develop a meta-ensemble model capable of multi-variate time-series classification.
 - Implement an explainable AI (XAI) layer using SHAP and Attention Heatmaps to justify security alerts.
 - Deploy a production-ready dashboard localized for the TRNC geography.
+- Provide real-time financial recovery forecasting for utility management.
 
 ---
 
@@ -28,19 +31,26 @@ In the TRNC, KIB-TEK faces significant non-technical losses (NTL) due to meter t
 
 ## 3. Methodology
 ### 3.1 Data Strategy
-The research utilizes the **SGCC (State Grid Corporation of China)** dataset as a behavioral baseline, augmented with **Topological Injection** into the TRNC 11kV grid topology.
+The research utilizes the **SGCC (State Grid Corporation of China)** dataset as a behavioral baseline, augmented with **Topological Injection** into the TRNC 11kV grid topology. 1,500 meters are geographically anchored across Lefkoşa, Girne, Gazimağusa, and rural districts using a weighted city clustering algorithm.
 
-### 3.2 System Architecture
-![System Architecture](file:///C:/Users/eric.domah/.gemini/antigravity/brain/221daa0d-fdc1-4baa-a074-3be7a39f35e8/system_architecture_diagram.png)
+### 3.2 Multi-Model Meta-Ensemble (Hybrid Intelligence Layer)
+The GridGuard AI system employs a cascading meta-ensemble architecture to ensure maximum detection robustness across diverse theft patterns (Bypass, Meter Tampering, and Partial Shunting).
 
-### 3.3 Feature Engineering Matrix
-The detection engine processes a 48-dimensional feature vector, categorized into three tiers:
+#### 3.2.1 Unified Hybrid Core (Deep Learning)
+The central intelligence is a **Universal Hybrid Neural Network** that unifies three distinct temporal processing paradigms:
+- **Bidirectional LSTM (Bi-LSTM)**: Captures short-term sequential dependencies and local consumption "signatures."
+- **Transformer Encoder**: Employs self-attention mechanisms to identify global seasonal periodicities and multi-day correlations.
+- **Temporal Fusion Attention (TFT)**: Provides a gated residual mechanism that focuses the model’s attention on high-risk temporal windows (e.g., 02:00 – 05:00 AM).
 
-| Category | Primary Factor | Academic Significance |
-| :--- | :--- | :--- |
-| **Statistical** | Coefficient of Variation | Detects load-flattening indicative of fixed bypasses. |
-| **Temporal** | Periodic Attention Shift | Identifies deviations from standard 24-hr Cyprus residential cycles. |
-| **Grid-Integrity** | Cumulative Line Loss Variance | Cross-references transformer output vs. nodal consumption sums. |
+#### 3.2.2 Baseline Resilience (XGBoost)
+To complement the deep learning layers, an **XGBoost (Extreme Gradient Boosting)** model operates on the statistical feature space (variance, skewness, and peak-to-average ratios). This ensures that even "non-sequential" sudden shifts are captured with high precision.
+
+#### 3.2.3 Hybrid Decision Fusion
+Final classification is achieved via a weighted probability fusion:
+$$P_{final} = (0.7 \times P_{HybridDL}) + (0.3 \times P_{XGBoost})$$
+
+### 3.3 Explainable AI (XAI) Framework
+GridGuard AI utilizes SHAP (SHapley Additive exPlanations) to decompose model predictions into human-readable feature importance. This transparency is critical for legal and operational justification of power shutoff commands.
 
 ---
 
@@ -48,16 +58,15 @@ The detection engine processes a 48-dimensional feature vector, categorized into
 ### 4.1 TRNC Real-Time Control Room
 The system's operational layer is localized for the KIB-TEK 11kV distribution grid, monitoring 1,500 smart meters across the island. 
 
-### 4.2 Economic Impact Analysis (₺)
-A significant contribution of this research is the quantification of financial recovery for utility providers in Northern Cyprus. 
+### 4.2 Grid Financial & Forensic Analytics
+Beyond detection, the system provides an economic layer for utility management:
+- **Revenue Recovery Forecasting**: Uses time-series regression to estimate unbilled energy across a 12-month horizon.
+- **Grid Loss Decomposition**: Automatically separates **Technical Loss** (infrastructure heat loss) from **Non-Technical Loss** (theft).
+- **Temporal Profile Auditing**: Identifies peak theft windows (typically 02:00 - 05:00 AM) through baseline variance monitoring.
 
-**KIB-TEK Financial Projections:**
+### 4.3 Economic Impact Analysis (₺)
 - **Current Est. Monthly Loss (Grid-Wide):** ~₺821,500 (based on a 5.2% NTL rate).
-- **Targeted Recovery:** Implementing GridGuard AI’s meta-ensemble (94.2% Precise Detection) allows for a projected recovery of **₺773,853 per month**.
-- **System ROI:** The infrastructure cost of the AI SCADA bridge is estimated to be recovered within the first quarter of deployment.
-
-### 4.3 Integrated XAI Diagnostics
-GridGuard AI addresses the "Black Box" problem in utility security. Utilizing SHAP values and Attention Heatmaps, the system generates "Investigation Memos" for field engineers, providing a transparent justification for every power-shutoff command executed.
+- **Targeted Recovery:** Using the 94.2% precise detection rate, recovery is projected at **₺773,853 per month**.
 
 ---
 
@@ -71,5 +80,5 @@ GridGuard AI addresses the "Black Box" problem in utility security. Utilizing SH
 
 ---
 
-## 5. Conclusion
+## 6. Conclusion
 GridGuard AI provides a scalable, enterprise-grade solution for NTL reduction in the TRNC. Future work includes the integration of Federated Learning for edge-device deployment directly on smart meters.
