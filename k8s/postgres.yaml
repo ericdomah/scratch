@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: postgres:15-alpine
+        image: timescale/timescaledb:latest-pg15
         env:
         - name: POSTGRES_USER
           value: "kibtek_admin"
@@ -32,6 +32,8 @@ spec:
           value: "secure_grid_password"
         - name: POSTGRES_DB
           value: "gridguard_db"
+        - name: TS_TUNE_MEMORY
+          value: "2GB"
         ports:
         - containerPort: 5432
         volumeMounts:
