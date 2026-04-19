@@ -29,8 +29,15 @@ function MapController({ inspectEvent, setSelectedMeter }: { inspectEvent: { met
     if (inspectEvent) {
       const meter = globalMeters.find(m => m.id === inspectEvent.meterId);
       if (meter) {
-        map.flyTo([meter.lat, meter.lng], 16, { duration: 2 });
-        setSelectedMeter(meter);
+        // Use a slight timeout to ensure map is ready after navigation
+        const timer = setTimeout(() => {
+          map.flyTo([meter.lat, meter.lng], 16, { 
+            duration: 1.5,
+            animate: true
+          });
+          setSelectedMeter(meter);
+        }, 150);
+        return () => clearTimeout(timer);
       }
     }
   }, [inspectEvent, map, setSelectedMeter]);
@@ -72,6 +79,19 @@ export default function GeospatialMap() {
               />
             ))}
           </MarkerClusterGroup>
+
+          {/* High-Visibility Focus Ring for Inspected Meter */}
+          {selectedMeter && (
+            <Marker 
+              position={[selectedMeter.lat, selectedMeter.lng]}
+              icon={L.divIcon({
+                className: 'focus-marker',
+                html: `<div class="w-8 h-8 -ml-2.5 -mt-2.5 rounded-full border-2 border-[#00f0ff] animate-ping opacity-75"></div>`,
+                iconSize: [0, 0]
+              })}
+              zIndexOffset={1000}
+            />
+          )}
         </MapContainer>
       </div>
 
