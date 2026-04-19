@@ -5,13 +5,14 @@ export const generateMeters = (count: number) => {
     
     // Precise TRNC City Clustering to guarantee 100% landmass placement
     const CITIES = [
-      { name: 'Lefkoşa', weight: 0.35, lat: 35.1856, lng: 33.3823, varLat: [-0.04, 0.04], varLng: [-0.06, 0.06] },
-      { name: 'Girne', weight: 0.20, lat: 35.3325, lng: 33.3166, varLat: [-0.04, 0.00], varLng: [-0.08, 0.08] },
-      { name: 'Gazimağusa', weight: 0.15, lat: 35.1149, lng: 33.9392, varLat: [-0.03, 0.03], varLng: [-0.06, 0.00] },
-      { name: 'Güzelyurt', weight: 0.10, lat: 35.1997, lng: 32.9915, varLat: [-0.03, 0.03], varLng: [0.00, 0.05] },
-      { name: 'İskele', weight: 0.10, lat: 35.2869, lng: 33.8881, varLat: [-0.03, 0.03], varLng: [-0.04, 0.04] },
-      { name: 'Lefke', weight: 0.05, lat: 35.1119, lng: 32.8483, varLat: [-0.01, 0.02], varLng: [0.00, 0.03] },
-      { name: 'Karpaz', weight: 0.05, lat: 35.5997, lng: 34.3822, varLat: [-0.04, 0.00], varLng: [-0.15, 0.00] }
+      { name: 'Lefkoşa', weight: 0.30, lat: 35.1856, lng: 33.3823, varLat: [-0.08, 0.08], varLng: [-0.10, 0.10] },
+      { name: 'Girne', weight: 0.15, lat: 35.3325, lng: 33.3166, varLat: [-0.08, 0.01], varLng: [-0.15, 0.15] },
+      { name: 'Gazimağusa', weight: 0.15, lat: 35.1149, lng: 33.9392, varLat: [-0.08, 0.08], varLng: [-0.12, 0.02] },
+      { name: 'Güzelyurt', weight: 0.10, lat: 35.1997, lng: 32.9915, varLat: [-0.06, 0.06], varLng: [-0.05, 0.10] },
+      { name: 'İskele', weight: 0.10, lat: 35.2869, lng: 33.8881, varLat: [-0.10, 0.10], varLng: [-0.10, 0.10] },
+      { name: 'Lefke', weight: 0.05, lat: 35.1119, lng: 32.8483, varLat: [-0.03, 0.05], varLng: [0.00, 0.08] },
+      { name: 'Karpaz', weight: 0.10, lat: 35.4500, lng: 34.2000, varLat: [-0.10, 0.10], varLng: [-0.30, 0.20] },
+      { name: 'Rural Scatters', weight: 0.05, lat: 35.2500, lng: 33.5000, varLat: [-0.20, 0.20], varLng: [-0.40, 0.40] }
     ];
 
     const r = Math.random();

@@ -95,7 +95,7 @@ async def websocket_telemetry(websocket: WebSocket):
             # Broadcast simulated high-urgency KIB-TEK theft telemetry
             is_bypass = random.random() > 0.8
             mock_alert = {
-                "id": f"KIB-TEK-{random.randint(1000, 9999)}",
+                "id": f"KIB-TEK-{random.randint(1000, 2499)}",
                 "risk": "high" if is_bypass else "medium",
                 "confidence": (random.random() * 0.2 + 0.8) if is_bypass else (random.random() * 0.3 + 0.5),
                 "status": "pending" if is_bypass else "investigating"

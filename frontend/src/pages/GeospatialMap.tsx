@@ -40,7 +40,7 @@ function MapController({ inspectEvent, setSelectedMeter }: { inspectEvent: { met
 
 export default function GeospatialMap() {
   const [selectedMeter, setSelectedMeter] = useState<any>(null);
-  const { inspectEvent } = useGridStore();
+  const { inspectEvent, liveAlerts } = useGridStore();
 
   return (
     <div className="flex h-full min-h-[500px] w-full border border-slate-800 rounded-xl overflow-hidden relative shadow-2xl">
@@ -77,7 +77,13 @@ export default function GeospatialMap() {
 
       {/* Contextual Side Panel containing XAI Visualizations */}
       <div className={`transition-all duration-300 ease-in-out bg-slate-900 border-l border-slate-800 ${selectedMeter ? 'max-w-md w-96 opacity-100' : 'max-w-0 w-0 opacity-0 overflow-hidden'}`}>
-        <SidePanel meter={selectedMeter} onClose={() => setSelectedMeter(null)} />
+        <SidePanel 
+          meter={selectedMeter ? {
+            ...selectedMeter,
+            ...liveAlerts.find(a => a.id === selectedMeter.id)
+          } : null} 
+          onClose={() => setSelectedMeter(null)} 
+        />
       </div>
     </div>
   );

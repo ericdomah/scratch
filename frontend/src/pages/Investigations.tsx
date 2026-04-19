@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Search, Filter, Clock, CheckCircle, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Search, Filter, Clock, CheckCircle, AlertTriangle, ChevronRight, MapPin } from 'lucide-react';
 import { useGridStore } from '../store/gridStore';
+import { useNavigate } from 'react-router-dom';
 
 export default function Investigations() {
-  const { liveAlerts } = useGridStore();
+  const { liveAlerts, triggerInspect } = useGridStore();
   const [selectedCase, setSelectedCase] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const navigate = useNavigate();
   
   React.useEffect(() => {
     const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
@@ -130,6 +132,16 @@ export default function Investigations() {
                   <div className="flex space-x-2">
                     <button className="flex-1 py-2 bg-[#1e293b] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#2d3a4f] transition-all">
                       Assign Tech
+                    </button>
+                    <button 
+                      onClick={() => {
+                        triggerInspect(selectedCase.id);
+                        navigate('/map');
+                      }}
+                      className="flex-1 py-2 bg-blue-600/10 border border-blue-500/30 text-blue-500 text-xs font-bold uppercase tracking-widest hover:bg-blue-600/20 transition-all flex items-center justify-center"
+                    >
+                      <MapPin className="h-3 w-3 mr-2" />
+                      Inspect Map
                     </button>
                     <button className="flex-1 py-2 bg-red-600/10 border border-red-500/30 text-red-500 text-xs font-bold uppercase tracking-widest hover:bg-red-600/20 transition-all">
                       Flag Fraud
