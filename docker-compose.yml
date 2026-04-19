@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./gridguard.db
+    volumes:
+      - ./backend:/app
+      - ./ml_engine:/ml_engine
+    depends_on:
+      - ml_engine
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  ml_engine:
+    build: ./ml_engine
+    volumes:
+      - ./ml_engine:/app
+      - ./data:/data
+    environment:
+      - PYTHONUNBUFFERED=1

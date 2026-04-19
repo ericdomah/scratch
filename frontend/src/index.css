@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+:root {
+  --bg-color: #000000;
+  --panel-bg: #050505;
+  --border-color: #1e293b;
+  --accent-cyan: #00f0ff;
+  --text-primary: #e2e8f0;
+  --text-dim: #64748b;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color) !important;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', 'Menlo', 'Consolas', monospace; /* Force SCADA mono globally */
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Leaflet Map Overrides */
+.custom-leaflet-marker {
+  background: transparent;
+  border: none;
+}
+.leaflet-container {
+  background-color: #000000 !important;
+  border-radius: 0 !important;
+  border: 1px solid var(--border-color);
+}
+.leaflet-control-attribution {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  color: #64748b !important;
+}
+.leaflet-control-attribution a {
+  color: var(--accent-cyan) !important;
+}
+
+/* Scrollbar Brutalism */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #000000;
+  border-left: 1px solid var(--border-color);
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
