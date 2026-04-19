@@ -5,10 +5,16 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # cert-manager integration for automatic Let's Encrypt TLS certificates
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     # Placeholder for future mTLS annotations
     # nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
     # nginx.ingress.kubernetes.io/auth-tls-secret: "default/gridguard-mtls"
 spec:
+  tls:
+  - hosts:
+    - gridguard.local
+    secretName: gridguard-tls-secret
   rules:
   - host: gridguard.local
     http:

@@ -8,7 +8,7 @@ import { useGridStore } from '../../store/gridStore';
 
 export default function AlertTable() {
   const [searchTerm, setSearchTerm] = useState('');
-  const { liveAlerts, addLiveAlert, incrementInvestigations, setSelectedMeterId } = useGridStore();
+  const { liveAlerts, addLiveAlert, incrementInvestigations, triggerInspect } = useGridStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function AlertTable() {
   }, [addLiveAlert]);
 
   const handleInspect = (meterId: string) => {
-    setSelectedMeterId(meterId);
+    triggerInspect(meterId);
     incrementInvestigations();
     navigate('/map'); 
   };
@@ -41,7 +41,7 @@ export default function AlertTable() {
     doc.text(`Generated: ${new Date().toLocaleString()} | Source: GridGuard AI Meta-Ensemble`, 14, 35);
     
     // Anomaly Table
-    const tableData = alerts.map(a => [
+    const tableData = liveAlerts.map(a => [
       a.id,
       a.risk.toUpperCase(),
       `${(a.confidence * 100).toFixed(1)}%`,

@@ -4,7 +4,7 @@ import { useGridStore } from '../store/gridStore';
 import { useNavigate } from 'react-router-dom';
 
 export default function Alerts() {
-  const { liveAlerts, setSelectedMeterId } = useGridStore();
+  const { liveAlerts, triggerInspect } = useGridStore();
   const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
 
@@ -14,7 +14,7 @@ export default function Alerts() {
   });
 
   const handleInspect = (id: string) => {
-    setSelectedMeterId(id);
+    triggerInspect(id);
     navigate('/map');
   };
 

@@ -22,28 +22,25 @@ const createRiskIcon = (risk: string) => {
   });
 };
 
-function MapController({ selectedMeterId, setSelectedMeter }: { selectedMeterId: string | null, setSelectedMeter: (m: any) => void }) {
+function MapController({ inspectEvent, setSelectedMeter }: { inspectEvent: { meterId: string, timestamp: number } | null, setSelectedMeter: (m: any) => void }) {
   const map = useMap();
-  const { setSelectedMeterId } = useGridStore();
 
   useEffect(() => {
-    if (selectedMeterId) {
-      const meter = globalMeters.find(m => m.id === selectedMeterId);
+    if (inspectEvent) {
+      const meter = globalMeters.find(m => m.id === inspectEvent.meterId);
       if (meter) {
         map.flyTo([meter.lat, meter.lng], 16, { duration: 2 });
         setSelectedMeter(meter);
-        // Clean up the store state so it doesn't re-trigger on subsequent visits
-        setTimeout(() => setSelectedMeterId(null), 3000);
       }
     }
-  }, [selectedMeterId, map, setSelectedMeter, setSelectedMeterId]);
+  }, [inspectEvent, map, setSelectedMeter]);
 
   return null;
 }
 
 export default function GeospatialMap() {
   const [selectedMeter, setSelectedMeter] = useState<any>(null);
-  const { selectedMeterId } = useGridStore();
+  const { inspectEvent } = useGridStore();
 
   return (
     <div className="flex h-full min-h-[500px] w-full border border-slate-800 rounded-xl overflow-hidden relative shadow-2xl">
@@ -54,7 +51,7 @@ export default function GeospatialMap() {
           className="w-full h-full z-0"
           zoomControl={false}
         >
-          <MapController selectedMeterId={selectedMeterId} setSelectedMeter={setSelectedMeter} />
+          <MapController inspectEvent={inspectEvent} setSelectedMeter={setSelectedMeter} />
           
           <TileLayer
             attribution='&copy; <a href="https://carto.com/">CartoDB</a>'

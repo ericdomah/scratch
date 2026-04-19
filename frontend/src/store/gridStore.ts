@@ -7,7 +7,7 @@ interface GridState {
   investigations: number;
   estimatedLoss: number;
   liveAlerts: any[];
-  selectedMeterId: string | null;
+  inspectEvent: { meterId: string, timestamp: number } | null;
   config: {
     ensembleThreshold: number;
     xgboostWeight: number;
@@ -25,7 +25,7 @@ interface GridState {
   addLiveAlert: (alert: any) => void;
   incrementInvestigations: () => void;
   updateKPIs: (data: Partial<GridState>) => void;
-  setSelectedMeterId: (id: string | null) => void;
+  triggerInspect: (id: string) => void;
   updateConfig: (newConfig: Partial<GridState['config']>) => void;
 }
 
@@ -42,7 +42,7 @@ export const useGridStore = create<GridState>((set) => ({
   investigations: 26,
   estimatedLoss: initialLoss, 
   liveAlerts: initialAlerts, 
-  selectedMeterId: null,
+  inspectEvent: null,
   config: {
     ensembleThreshold: 0.85,
     xgboostWeight: 0.40,
@@ -81,7 +81,7 @@ export const useGridStore = create<GridState>((set) => ({
     ...data
   })),
 
-  setSelectedMeterId: (id) => set({ selectedMeterId: id }),
+  triggerInspect: (id) => set({ inspectEvent: { meterId: id, timestamp: Date.now() } }),
 
   updateConfig: (newConfig) => set((state) => ({
     config: { ...state.config, ...newConfig }

@@ -9,6 +9,7 @@ export default function Settings() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<'none' | 'success' | 'error'>('none');
+  const [showSecurityCheck, setShowSecurityCheck] = useState(false);
 
   useEffect(() => {
     setLocalConfig(config);
@@ -36,7 +37,12 @@ export default function Settings() {
     }, 1500);
   };
 
+  const handlePreDeploy = () => {
+    setShowSecurityCheck(true);
+  };
+
   const handleDeploy = () => {
+    setShowSecurityCheck(false);
     setIsDeploying(true);
     setTimeout(() => {
       updateConfig(localConfig);
@@ -197,7 +203,7 @@ export default function Settings() {
 
       <div className="flex justify-end pt-4 sticky bottom-6 z-10">
         <button 
-          onClick={handleDeploy}
+          onClick={handlePreDeploy}
           disabled={isDeploying || isTesting}
           className="flex items-center px-8 py-3 bg-[#00f0ff] text-black font-black uppercase text-xs tracking-widest hover:bg-[#00f0ff]/80 transition-all disabled:opacity-50"
         >
@@ -216,6 +222,36 @@ export default function Settings() {
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-emerald-500/10 border border-emerald-500 text-emerald-500 px-6 py-3 font-mono text-xs uppercase tracking-widest flex items-center animate-in slide-in-from-bottom-5 z-50 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
           <CheckCircle className="h-4 w-4 mr-2" />
           Configuration deployed to active network
+        </div>
+      )}
+
+      {showSecurityCheck && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#050505] border border-[#00f0ff] p-8 max-w-md w-full animate-in zoom-in-95 shadow-[0_0_30px_rgba(0,240,255,0.1)]">
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-[#00f0ff]/10 flex items-center justify-center border border-[#00f0ff]/30 animate-pulse">
+                <Shield className="h-8 w-8 text-[#00f0ff]" />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-white text-center font-mono mb-2">SECURITY CLEARANCE REQUIRED</h3>
+            <p className="text-xs text-slate-400 text-center font-mono mb-8">
+              Modifying ML Ensemble parameters requires Level 4 authorization. Please insert your hardware security key and tap to verify.
+            </p>
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setShowSecurityCheck(false)}
+                className="flex-1 py-3 bg-transparent border border-slate-700 text-slate-400 font-bold uppercase text-xs tracking-widest hover:bg-slate-900 transition-all"
+              >
+                Abort
+              </button>
+              <button 
+                onClick={handleDeploy}
+                className="flex-1 py-3 bg-[#00f0ff] border border-[#00f0ff] text-black font-black uppercase text-xs tracking-widest hover:bg-[#00f0ff]/80 transition-all shadow-[0_0_15px_rgba(0,240,255,0.4)]"
+              >
+                Simulate YubiKey Tap
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

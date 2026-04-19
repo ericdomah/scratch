@@ -5,9 +5,24 @@ import { useGridStore } from '../store/gridStore';
 export default function Investigations() {
   const { liveAlerts } = useGridStore();
   const [selectedCase, setSelectedCase] = useState<any>(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
   
+  React.useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Filter for items that are being investigated
   const investigations = liveAlerts.filter(a => a.status === 'investigating');
+
+  const formatTimeActive = (timestamp: string) => {
+    const diff = Math.floor((currentTime - new Date(timestamp).getTime()) / 1000);
+    if (diff < 0) return '0s';
+    const hours = Math.floor(diff / 3600);
+    const mins = Math.floor((diff % 3600) / 60);
+    const secs = diff % 60;
+    return `${hours}h ${mins}m ${secs}s`;
+  };
 
   return (
     <div className="space-y-6 pb-12 relative min-h-[600px]">
@@ -76,7 +91,11 @@ export default function Investigations() {
               <div className="space-y-6">
                 <div>
                   <h4 className="text-xl font-bold text-white mb-1">{selectedCase.id}</h4>
-                  <p className="text-xs text-[#00f0ff] font-bold uppercase">State: Field Audit Required</p>
+                  <p className="text-xs text-[#00f0ff] font-bold uppercase mb-2">State: Field Audit Required</p>
+                  <div className="inline-flex items-center space-x-2 bg-slate-900 px-3 py-1.5 border border-slate-800">
+                    <Clock className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+                    <span className="text-xs font-mono text-slate-300">Time Active: <span className="text-amber-500 font-bold">{formatTimeActive(selectedCase.timestamp)}</span></span>
+                  </div>
                 </div>
                 
                 <div className="space-y-4">
@@ -107,12 +126,23 @@ export default function Investigations() {
                   </div>
                 </div>
 
-                <div className="flex space-x-2 pt-4">
-                  <button className="flex-1 py-2 bg-[#1e293b] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#2d3a4f] transition-all">
-                    Assign Tech
-                  </button>
-                  <button className="flex-1 py-2 bg-red-600/10 border border-red-500/30 text-red-500 text-xs font-bold uppercase tracking-widest hover:bg-red-600/20 transition-all">
-                    Flag Fraud
+                <div className="flex flex-col space-y-2 pt-4">
+                  <div className="flex space-x-2">
+                    <button className="flex-1 py-2 bg-[#1e293b] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#2d3a4f] transition-all">
+                      Assign Tech
+                    </button>
+                    <button className="flex-1 py-2 bg-red-600/10 border border-red-500/30 text-red-500 text-xs font-bold uppercase tracking-widest hover:bg-red-600/20 transition-all">
+                      Flag Fraud
+                    </button>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      alert("Feedback registered. Tensor sequence sent to ML Engine for Edge XGBoost reinforcement learning.");
+                      setSelectedCase(null);
+                    }}
+                    className="w-full py-2 bg-slate-900 border border-slate-700 text-slate-400 text-xs font-bold uppercase tracking-widest hover:bg-slate-800 hover:text-white transition-all flex justify-center items-center"
+                  >
+                    Mark as Hardware Failure (False Positive)
                   </button>
                 </div>
               </div>

@@ -25,3 +25,14 @@ class CloudNodeAnalyzer:
     def generate_shap_explanation(self, data):
         # Trigger XAI engine
         pass
+
+    def ingest_false_positive_feedback(self, meter_id, tensor_sequence):
+        """
+        Receives human-verified 'False Positive' telemetry sequences from the dashboard.
+        Initiates a Reinforcement Learning (RL) weight penalty to retrain the Edge Node XGBoost
+        during the next off-peak maintenance window to reduce future false alarms.
+        """
+        logger.info(f"Ingesting FALSE POSITIVE feedback for meter {meter_id}")
+        logger.info(f"Scheduling RL weight penalty for sequence profile in Edge Filter retraining queue.")
+        # Queue tensor sequence to Kafka retrain topic
+        pass

@@ -3,22 +3,39 @@ export const generateMeters = (count: number) => {
     const isBypass = Math.random() > 0.95; // 5% high risk
     const isWarning = !isBypass && Math.random() > 0.85; // 10% medium risk
     
-    // Strict Inland TRNC Topological Bounding Boxes to guarantee zero ocean spillage
+    // Precise TRNC City Clustering to guarantee 100% landmass placement
+    const CITIES = [
+      // Lefkoşa (Central, safe all around)
+      { weight: 0.35, lat: 35.1856, lng: 33.3823, varLat: [-0.04, 0.04], varLng: [-0.06, 0.06] },
+      // Girne (North Coast, must only vary SOUTH and slightly east/west)
+      { weight: 0.20, lat: 35.3325, lng: 33.3166, varLat: [-0.04, 0.00], varLng: [-0.08, 0.08] },
+      // Gazimağusa (East Coast, must only vary WEST and slightly north/south)
+      { weight: 0.15, lat: 35.1149, lng: 33.9392, varLat: [-0.03, 0.03], varLng: [-0.06, 0.00] },
+      // Güzelyurt (West Coast, must only vary EAST and slightly north/south)
+      { weight: 0.10, lat: 35.1997, lng: 32.9915, varLat: [-0.03, 0.03], varLng: [0.00, 0.05] },
+      // İskele (Inland East)
+      { weight: 0.10, lat: 35.2869, lng: 33.8881, varLat: [-0.03, 0.03], varLng: [-0.04, 0.04] },
+      // Lefke (Deep West)
+      { weight: 0.05, lat: 35.1119, lng: 32.8483, varLat: [-0.01, 0.02], varLng: [0.00, 0.03] },
+      // Karpaz Peninsula (Extremely thin strip, varying southwest)
+      { weight: 0.05, lat: 35.5997, lng: 34.3822, varLat: [-0.04, 0.00], varLng: [-0.15, 0.00] }
+    ];
+
     const r = Math.random();
-    let lat, lng;
-    if (r < 0.45) { 
-      // Central Inland Safe-corridor (Lefkoşa to Güzelyurt) 
-      lat = 35.18 + (Math.random() * 0.07); 
-      lng = 32.95 + (Math.random() * 0.35); 
-    } else if (r < 0.80) { 
-      // Eastern Inland Plains (Geçitkale to Mağusa)
-      lat = 35.15 + (Math.random() * 0.12); 
-      lng = 33.40 + (Math.random() * 0.45); 
-    } else { 
-      // Karpaz Peninsula (Extremely thin safe line to trace the land bridge)
-      lng = 34.00 + (Math.random() * 0.45); 
-      lat = 35.33 + ((lng - 34.0) / 0.45) * 0.28 + (Math.random() * 0.03 - 0.015);
+    let cumulative = 0;
+    let selectedCity = CITIES[0];
+    
+    for (const city of CITIES) {
+      cumulative += city.weight;
+      if (r <= cumulative) {
+        selectedCity = city;
+        break;
+      }
     }
+
+    // Apply safe variance
+    const lat = selectedCity.lat + (Math.random() * (selectedCity.varLat[1] - selectedCity.varLat[0]) + selectedCity.varLat[0]);
+    const lng = selectedCity.lng + (Math.random() * (selectedCity.varLng[1] - selectedCity.varLng[0]) + selectedCity.varLng[0]);
 
     return {
       id: `KIB-TEK-${1000 + i}`,
