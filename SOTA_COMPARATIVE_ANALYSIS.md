@@ -49,6 +49,18 @@ Sophisticated "Adversarial Thieves" could theoretically attempt to "hide" their 
 1.  **Model Distillation:** Compressing the heavy Meta-Ensemble into a "Lightweight" version suitable for Edge Computing (running directly on smart meter chips).
 2.  **Multi-Modal Fusion:** Incorporating weather data and regional economic indicators to further refine the Grid Load Index.
 
+## ⚖️ Critical Reflection on Real-World Realism
+
+It is important to note that the **100% Recall** and **95% F1-Score** achieved in this study represent the **"Theoretical Upper Bound"** of the system within a controlled **Digital Twin Environment**. 
+
+In a real-world utility deployment (e.g., a full-scale KIB-TEK rollout), several factors would likely lead to a performance degradation (estimated 75-85% Recall):
+1.  **Sensor Noise:** Real-world grid telemetry is often noisy, delayed, or missing, which would reduce the precision of the "Context-Aware" logic.
+2.  **Behavioral Diversity:** A real population exhibits an infinite variety of "Normal Anomalies" (e.g., home renovations, sudden industrial spikes) that were not fully captured in the simulated baseline.
+3.  **Adversarial Evolution:** Real-world thieves are creative and would eventually attempt to "game" the system once they understand its reliance on grid-load correlation.
+
+### 🏛️ Academic Conclusion
+The results of this thesis prove the **Architectural Validity** of the Context-Aware Meta-Ensemble. While real-world performance will naturally be lower than simulation performance, the **relative improvement** over baseline models remains the key contribution of this work.
+
 ---
 
 ## 🏛️ Conclusion for Thesis Defense
