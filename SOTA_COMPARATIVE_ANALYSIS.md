@@ -27,6 +27,28 @@ A major pain point in utility grids is the "False Alarm" caused by natural lifes
 ### 3. The Digital Twin Methodology
 Most research is limited by the "Scarcity of Theft Data." Our approach of building a **Smart Grid Digital Twin** to generate physically realistic theft patterns ensures that the model is robust against sophisticated thieves who attempt to hide their patterns using "Partial Bypasses"—a category often missed by models trained on generic public datasets.
 
+## 🛑 Limitations & Challenges (The "Weaknesses")
+
+While GridGuard AI sets a new benchmark for accuracy, it is important to acknowledge the following architectural and operational limitations:
+
+### 1. Computational Complexity (Resource Overhead)
+The **Triple-Hybrid Meta-Ensemble** is significantly more computationally expensive than standard academic baselines. While it delivers superior precision, deploying this model at a national scale (millions of meters) would require substantial GPU/TPU infrastructure for real-time inference.
+
+### 2. Dependency on Grid Telemetry Quality
+The "Context-Aware" logic relies on the accuracy of the **Grid Load Index**. If the utility's secondary transformer sensors are poorly calibrated or experience downtime, the model's ability to filter out false positives will degrade. The system is "data-dependent" on the utility's broader IoT health.
+
+### 3. Data Privacy and Governance
+Fusing individual consumption patterns with geospatial metadata raises valid **Consumer Privacy** concerns. Real-world deployment would require a rigorous data anonymization layer to ensure compliance with international privacy standards (e.g., GDPR), which adds an extra layer of engineering complexity.
+
+### 4. Adversarial Adaptability
+Sophisticated "Adversarial Thieves" could theoretically attempt to "hide" their tampering signatures during periods of high grid load to evade the Context-Aware logic. Constant model retraining on new adversarial patterns is required to maintain a tactical edge.
+
+---
+
+## 🔮 Future Work
+1.  **Model Distillation:** Compressing the heavy Meta-Ensemble into a "Lightweight" version suitable for Edge Computing (running directly on smart meter chips).
+2.  **Multi-Modal Fusion:** Incorporating weather data and regional economic indicators to further refine the Grid Load Index.
+
 ---
 
 ## 🏛️ Conclusion for Thesis Defense
