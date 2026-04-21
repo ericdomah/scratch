@@ -6,7 +6,7 @@ from preprocessing import DataPreprocessor
 import os
 
 class InferenceEngine:
-    def __init__(self, dl_model_path='best_model.pth', xgb_model_path='best_xgb.pkl', device='cpu'):
+    def __init__(self, dl_model_path='best_model_balanced.pth', xgb_model_path='best_xgb_augmented.pkl', device='cpu'):
         self.device = device
         self.preprocessor = DataPreprocessor()
         
@@ -58,7 +58,8 @@ class InferenceEngine:
         # Deep learning handles sequential/seasonal patterns, XGB boosts feature-level anomalies
         hybrid_prob = (0.7 * dl_prob) + (0.3 * xgb_prob)
             
-        prediction = 1 if hybrid_prob > 0.5 else 0
+        # Use the optimal Meta-Ensemble threshold found in the SOTA comparative study
+        prediction = 1 if hybrid_prob > 0.5270 else 0
         return {
             "is_theft": bool(prediction),
             "confidence": float(hybrid_prob),
