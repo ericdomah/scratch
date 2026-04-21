@@ -22,16 +22,26 @@ const createRiskIcon = (risk: string) => {
   });
 };
 
-function MapController({ inspectEvent, setSelectedMeter }: { inspectEvent: { meterId: string, timestamp: number } | null, setSelectedMeter: (m: any) => void }) {
+function MapController({ inspectEvent, setSelectedMeter, liveAlerts }: { 
+  inspectEvent: { meterId: string, timestamp: number } | null, 
+  setSelectedMeter: (m: any) => void,
+  liveAlerts: any[]
+}) {
   const map = useMap();
 
   useEffect(() => {
     if (inspectEvent) {
-      const meter = globalMeters.find(m => m.id === inspectEvent.meterId);
+      // Search in both static and live lists
+      const meter = globalMeters.find(m => m.id === inspectEvent.meterId) || 
+                    liveAlerts.find(a => a.id === inspectEvent.meterId);
+                    
       if (meter) {
-        // Use a slight timeout to ensure map is ready after navigation
+        // Ensure we have lat/lng (liveAlerts use 'lon' instead of 'lng' sometimes)
+        const lat = meter.lat;
+        const lng = meter.lng || meter.lon;
+
         const timer = setTimeout(() => {
-          map.flyTo([meter.lat, meter.lng], 16, { 
+          map.flyTo([lat, lng], 16, { 
             duration: 1.5,
             animate: true
           });
@@ -40,7 +50,7 @@ function MapController({ inspectEvent, setSelectedMeter }: { inspectEvent: { met
         return () => clearTimeout(timer);
       }
     }
-  }, [inspectEvent, map, setSelectedMeter]);
+  }, [inspectEvent, map, setSelectedMeter, liveAlerts]);
 
   return null;
 }
@@ -58,7 +68,7 @@ export default function GeospatialMap() {
           className="w-full h-full z-0"
           zoomControl={false}
         >
-          <MapController inspectEvent={inspectEvent} setSelectedMeter={setSelectedMeter} />
+          <MapController inspectEvent={inspectEvent} setSelectedMeter={setSelectedMeter} liveAlerts={liveAlerts} />
           
           <TileLayer
             attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
@@ -68,6 +78,7 @@ export default function GeospatialMap() {
             chunkedLoading
             maxClusterRadius={50}
           >
+            {/* Global Static Meters */}
             {globalMeters.map((meter) => (
               <Marker 
                 key={meter.id} 
@@ -75,6 +86,18 @@ export default function GeospatialMap() {
                 icon={createRiskIcon(meter.risk)}
                 eventHandlers={{
                   click: () => setSelectedMeter(meter)
+                }}
+              />
+            ))}
+            
+            {/* Dynamic Live Alerts from Simulation */}
+            {liveAlerts.map((alert) => (
+              <Marker 
+                key={alert.id} 
+                position={[alert.lat, alert.lng]}
+                icon={createRiskIcon(alert.risk)}
+                eventHandlers={{
+                  click: () => setSelectedMeter(alert)
                 }}
               />
             ))}

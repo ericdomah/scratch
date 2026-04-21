@@ -57,7 +57,12 @@ export const useGridStore = create<GridState>((set) => ({
   },
 
   addLiveAlert: (alert) => set((state) => {
-    const newAlerts = [alert, ...state.liveAlerts].slice(0, 50);
+    // Standardize coordinate naming for the map (handle both lon and lng)
+    const normalizedAlert = {
+      ...alert,
+      lng: alert.lng || alert.lon
+    };
+    const newAlerts = [normalizedAlert, ...state.liveAlerts].slice(0, 50);
     // Dynamic financial loss calculation
     const newLoss = newAlerts.reduce((total, a) => {
       if (a.risk === 'high') return total + 15000;

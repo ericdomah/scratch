@@ -108,11 +108,12 @@ async def websocket_telemetry(websocket: WebSocket):
                 event = theft_events[idx % len(theft_events)]
                 idx += 1
                 payload = {
-                    "id": f"METER-{event['household_id']}",
+                    "id": f"KIB-TEK-{event['household_id']}",
                     "lat": event['lat'],
                     "lon": event['lon'],
                     "region": event['region_id'],
                     "anomaly": event['anomaly_type'],
+                    "risk": "high" if event['anomaly_label'] == 1 else "medium",
                     "confidence": round(random.uniform(0.75, 0.98), 2),
                     "consumption": event['consumption_kwh'],
                     "grid_load": event['grid_load_index'],
