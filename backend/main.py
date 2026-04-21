@@ -90,18 +90,44 @@ async def explain_theft(request: PredictionRequest):
 async def websocket_telemetry(websocket: WebSocket):
     await websocket.accept()
     try:
-        import asyncio, random
+        import asyncio, random, pandas as pd
+        
+        # Load the enriched grid simulation data
+        sim_data_path = "../data/grid_simulated_dataset.csv"
+        if os.path.exists(sim_data_path):
+            df_sim = pd.read_csv(sim_data_path)
+            # Filter for theft cases to show on the dashboard
+            theft_events = df_sim[df_sim['anomaly_label'] == 1].to_dict('records')
+            random.shuffle(theft_events)
+        else:
+            theft_events = []
+
+        idx = 0
         while True:
-            # Broadcast simulated high-urgency KIB-TEK theft telemetry
-            is_bypass = random.random() > 0.8
-            mock_alert = {
-                "id": f"KIB-TEK-{random.randint(1000, 2499)}",
-                "risk": "high" if is_bypass else "medium",
-                "confidence": (random.random() * 0.2 + 0.8) if is_bypass else (random.random() * 0.3 + 0.5),
-                "status": "pending" if is_bypass else "investigating"
-            }
-            await websocket.send_json(mock_alert)
-            await asyncio.sleep(4) # Push new NTL anomaly every 4 seconds
+            if theft_events:
+                event = theft_events[idx % len(theft_events)]
+                idx += 1
+                payload = {
+                    "id": f"METER-{event['household_id']}",
+                    "lat": event['lat'],
+                    "lon": event['lon'],
+                    "region": event['region_id'],
+                    "anomaly": event['anomaly_type'],
+                    "confidence": round(random.uniform(0.75, 0.98), 2),
+                    "consumption": event['consumption_kwh'],
+                    "grid_load": event['grid_load_index'],
+                    "status": "investigating"
+                }
+            else:
+                # Fallback to mock if file missing
+                payload = {
+                    "id": f"KIB-TEK-{random.randint(1000, 2499)}",
+                    "lat": 35.18, "lon": 33.36, # Lefkoşa
+                    "status": "pending"
+                }
+                
+            await websocket.send_json(payload)
+            await asyncio.sleep(3) # Stream every 3 seconds
     except Exception:
         pass
 
