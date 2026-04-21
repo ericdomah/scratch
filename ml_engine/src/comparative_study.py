@@ -31,9 +31,9 @@ def run_comparative_study():
     
     # 1. Load Data
     print("Loading Evaluation Dataset...")
-    DATA_PATH = "../../data/data set.csv"
+    DATA_PATH = "../../data/data_set_cleaned.csv"
     if not os.path.exists(DATA_PATH):
-        DATA_PATH = "../data/data set.csv"
+        DATA_PATH = "../data/data_set_cleaned.csv"
         
     dataset = ElectricityDataset(DATA_PATH, window_size=30, transform=True)
     
@@ -57,7 +57,9 @@ def run_comparative_study():
     # --- 1. Load XGBoost Vigorous ---
     print(">> Evaluating XGBoost Baseline...")
     xgb_model = XGBoostBaseline()
-    xgb_path = "best_xgb_vigorous.pkl"
+    xgb_path = "best_xgb_augmented.pkl"
+    if not os.path.exists(xgb_path):
+        xgb_path = "best_xgb_vigorous.pkl"
     if not os.path.exists(xgb_path):
         xgb_path = "best_xgb.pkl"
         
