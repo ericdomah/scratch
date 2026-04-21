@@ -31,8 +31,8 @@ init_db()
 
 # Initialize engines
 inference_engine = InferenceEngine(
-    dl_model_path='../ml_engine/src/best_model.pth',
-    xgb_model_path='../ml_engine/src/best_xgb.pkl'
+    dl_model_path='../ml_engine/src/best_model_balanced.pth',
+    xgb_model_path='../ml_engine/src/best_xgb_augmented.pkl'
 )
 xai_engine = XAIEngine(inference_engine.model)
 
@@ -76,8 +76,8 @@ async def explain_theft(request: PredictionRequest):
         readings = np.array(request.readings)
         # Prepare for attention extraction
         # (1, seq_len, 1)
-        input_tensor = torch.tensor(readings[:20], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
-        attn_map = xai_engine.get_attention_map(input_tensor)
+        input_tensor = torch.tensor(readings[:30], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
+        attn_map = xai_engine.get_integrated_gradients(input_tensor)
         
         return {
             "meter_id": request.meter_id,
