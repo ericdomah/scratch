@@ -1,0 +1,48 @@
+{
+  "optimal_threshold": 0.5948092341423035,
+  "best_fold": 1,
+  "fold_results": [
+    {
+      "fold": 1,
+      "f1": 0.18783269959397997,
+      "prec": 0.11076233183856503,
+      "rec": 0.6175,
+      "auroc": 0.6153473889555823,
+      "auprc": 0.11358771346103727,
+      "threshold": 0.5948092341423035
+    },
+    {
+      "fold": 2,
+      "f1": 0.18696664078061004,
+      "prec": 0.11065197428833792,
+      "rec": 0.6025,
+      "auroc": 0.6233164629488158,
+      "auprc": 0.12286744017707676,
+      "threshold": 0.5977635383605957
+    },
+    {
+      "fold": 3,
+      "f1": 0.18618153664888187,
+      "prec": 0.11014426379665675,
+      "rec": 0.60125,
+      "auroc": 0.6051308250572957,
+      "auprc": 0.11768924433687507,
+      "threshold": 0.5861228108406067
+    }
+  ],
+  "config": {
+    "data_path": "../../data/data_set_cleaned.csv",
+    "fallback_path": "../data/data_set_cleaned.csv",
+    "device": "cpu",
+    "epochs": 25,
+    "batch_size": 128,
+    "window_size": 30,
+    "n_folds": 3,
+    "lr_max": 0.002,
+    "weight_decay": 0.0001,
+    "focal_alpha": 0.8,
+    "focal_gamma": 2.0,
+    "min_recall": 0.6,
+    "save_dir": "checkpoints"
+  }
+}

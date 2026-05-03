@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'gridguard-api'
+    static_configs:
+      - targets: ['backend:8000']
+
+  - job_name: 'gridguard-ml-engine'
+    static_configs:
+      - targets: ['ml-engine:5000']

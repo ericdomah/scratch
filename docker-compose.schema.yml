@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.3.0
+    container_name: gridguard-schema-registry
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka:29092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    # Note: Assumes gridguard-kafka and gridguard-zookeeper are running on the same docker network
+    networks:
+      - gridguard-network
+
+networks:
+  gridguard-network:
+    external: true
