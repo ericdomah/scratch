@@ -37,6 +37,15 @@ body {
   background-color: #000000 !important;
   border-radius: 0 !important;
   border: 1px solid var(--border-color);
+  z-index: 0;
+}
+/* Prevent Tailwind preflight from breaking Leaflet layout */
+.leaflet-container * {
+  box-sizing: border-box !important;
+  margin: 0;
+}
+.leaflet-container img {
+  max-width: none !important;
 }
 .leaflet-control-attribution {
   background-color: rgba(0, 0, 0, 0.8) !important;
