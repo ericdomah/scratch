@@ -84,7 +84,7 @@ export default function GeospatialMap() {
             {globalMeters.map((meter) => (
               <Marker 
                 key={meter.id} 
-                position={[meter.lat, meter.lng]}
+                position={[meter.lat, meter.lng || meter.lon]}
                 icon={createRiskIcon(meter.risk)}
                 eventHandlers={{
                   click: () => setSelectedMeter(meter)
@@ -96,7 +96,7 @@ export default function GeospatialMap() {
             {liveAlerts.map((alert) => (
               <Marker 
                 key={alert.id} 
-                position={[alert.lat, alert.lng]}
+                position={[alert.lat, alert.lng || alert.lon]}
                 icon={createRiskIcon(alert.risk)}
                 eventHandlers={{
                   click: () => setSelectedMeter(alert)
@@ -108,7 +108,7 @@ export default function GeospatialMap() {
           {/* High-Visibility Focus Ring for Inspected Meter */}
           {selectedMeter && (
             <Marker 
-              position={[selectedMeter.lat, selectedMeter.lng]}
+              position={[selectedMeter.lat, selectedMeter.lng || selectedMeter.lon]}
               icon={L.divIcon({
                 className: 'focus-marker',
                 html: `<div class="w-8 h-8 -ml-2.5 -mt-2.5 rounded-full border-2 border-[#00f0ff] animate-ping opacity-75"></div>`,
