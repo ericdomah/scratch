@@ -1,4 +1,4 @@
-# GridGuard AI: A Meta-Ensemble Framework for Autonomous Electricity Theft Detection in the TRNC Power Grid
+# GridGuard AI for Power Theft Detection for Smart Grids
 
 **Degree:** Master of Science in Electrical and Electronic Engineering  
 **Institution:** Faculty of Engineering, Northern Cyprus  

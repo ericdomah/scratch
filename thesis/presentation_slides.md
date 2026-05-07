@@ -5,7 +5,7 @@
 ---
 
 ## Slide 1: Title Slide
-*   **Title:** GridGuard AI: A Context-Aware Meta-Ensemble for Electricity Theft Detection
+*   **Title:** GridGuard AI for Power Theft Detection for Smart Grids
 *   **Subtitle:** Securing the TRNC Smart Grid with Explainable Deep Learning
 *   **Visual:** The GridGuard AI dashboard logo or a sleek map of the TRNC grid.
 *   **Footer:** Your Name | Defense Date | Thesis Committee

@@ -5,7 +5,7 @@
 ---
 
 ## 1. Introduction & The Core Problem
-"Good morning, esteemed committee members. Today I am presenting GridGuard AI, a context-aware meta-ensemble designed to solve the critical issue of electricity theft in smart grids. 
+"Good morning, esteemed committee members. Today I am presenting GridGuard AI for Power Theft Detection for Smart Grids.
 
 Current state-of-the-art models face a massive roadblock: **The False Positive Crisis**. Standard deep learning models cannot differentiate between a family going on vacation and a criminal bypassing their meter. Both result in a sudden drop in consumption. Because of this, standard academic models flag thousands of innocent customers, making them useless for actual utility companies."
 
