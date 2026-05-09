@@ -130,7 +130,13 @@
 
         @media (max-width: 600px) {
             .controls { flex-wrap: wrap; gap: 10px; }
-            .btn { min-width: 45%; padding: 15px 10px; font-size: 14px; }
+            .btn { min-width: 45%; padding: 15px 10px; font-size: 14px; cursor: pointer; }
+        }
+        
+        /* Ensure taps fire correctly on mobile */
+        .btn, .container, body {
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
     </style>
 </head>
@@ -159,6 +165,12 @@
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
+            // Silent "kick" for iOS
+            const buffer = audioCtx.createBuffer(1, 1, 22050);
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioCtx.destination);
+            source.start(0);
         }
 
         function playBeep(freq = 800, dur = 0.15, vol = 0.2) {
@@ -282,8 +294,13 @@
         // Fullscreen & Audio Activation on first click
         document.body.onclick = () => {
             initAudio();
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(() => {});
+            const elem = document.documentElement;
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(() => {});
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen().catch(() => {});
+                }
             }
         };
     </script>
