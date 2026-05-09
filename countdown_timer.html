@@ -202,7 +202,7 @@
             timeLeft = seconds;
             isPaused = false;
             status.textContent = label;
-            pauseBtn.innerHTML = '<i class="fas fa-pause"></i> PAUSE';
+            pauseBtn.innerHTML = '<i class="fas fa-pause"></i> DURAKLAT';
             pauseBtn.disabled = false;
             updateDisplay();
             
@@ -227,18 +227,15 @@
             playBeep(440, 2.0, 0.3);
         }
 
-        document.getElementById('preBtn').onclick = (e) => {
-            e.stopPropagation();
+        document.getElementById('preBtn').onclick = () => {
             start(15, "PRE - 15 saniye geri sayım başladı");
         };
         
-        document.getElementById('postBtn').onclick = (e) => {
-            e.stopPropagation();
+        document.getElementById('postBtn').onclick = () => {
             start(30, "POST - 30 saniye geri sayım başladı");
         };
         
-        document.getElementById('stopBtn').onclick = (e) => {
-            e.stopPropagation();
+        document.getElementById('stopBtn').onclick = () => {
             clearInterval(timerInterval);
             timeLeft = 15;
             isPaused = false;
@@ -248,8 +245,7 @@
             pauseBtn.disabled = true;
         };
 
-        document.getElementById('addtimeBtn').onclick = (e) => {
-            e.stopPropagation();
+        document.getElementById('addtimeBtn').onclick = () => {
             if (timerInterval) {
                 timeLeft += 30;
                 updateDisplay();
@@ -260,8 +256,7 @@
             }
         };
 
-        pauseBtn.onclick = (e) => {
-            e.stopPropagation();
+        pauseBtn.onclick = () => {
             isPaused = !isPaused;
             pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i> DEVAM ET' : '<i class="fas fa-pause"></i> DURAKLAT';
             status.textContent = isPaused ? "Duraklatıldı" : "Devam Ediyor";
