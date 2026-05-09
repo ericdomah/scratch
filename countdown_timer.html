@@ -144,7 +144,7 @@
             <button class="btn btn-post" id="postBtn"><i class="fas fa-play"></i> POST (30s)</button>
             <button class="btn btn-stop" id="stopBtn"><i class="fas fa-stop"></i> DURDUR</button>
             <button class="btn btn-addtime" id="addtimeBtn"><i class="fas fa-plus"></i> SÜRE EKLE</button>
-            <button class="btn btn-pause-play" id="pausePlayBtn"><i class="fas fa-pause"></i> DURAKLAT</button>
+            <button class="btn btn-pause-play" id="pausePlayBtn"><i class="fas fa-play"></i> BAŞLAT</button>
         </div>
     </div>
 
@@ -219,10 +219,12 @@
 
         function finish() {
             clearInterval(timerInterval);
+            timerInterval = null;
             display.textContent = "00:00";
             status.textContent = "Süre Doldu!";
             display.classList.add('timer-alert');
-            pauseBtn.disabled = true;
+            pauseBtn.innerHTML = '<i class="fas fa-play"></i> BAŞLAT';
+            pauseBtn.disabled = false;
             // Continuous beep for 2 seconds
             playBeep(440, 2.0, 0.3);
         }
@@ -237,12 +239,13 @@
         
         document.getElementById('stopBtn').onclick = () => {
             clearInterval(timerInterval);
+            timerInterval = null;
             timeLeft = 15;
             isPaused = false;
             updateDisplay();
-            status.textContent = "Durduruldu - Yeni bir geri sayım başlatın";
+            status.textContent = "Hazır";
             pauseBtn.innerHTML = '<i class="fas fa-play"></i> BAŞLAT';
-            pauseBtn.disabled = true;
+            pauseBtn.disabled = false;
         };
 
         document.getElementById('addtimeBtn').onclick = () => {
@@ -257,9 +260,15 @@
         };
 
         pauseBtn.onclick = () => {
-            isPaused = !isPaused;
-            pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i> DEVAM ET' : '<i class="fas fa-pause"></i> DURAKLAT';
-            status.textContent = isPaused ? "Duraklatıldı" : "Devam Ediyor";
+            if (!timerInterval) {
+                // If clicked while idle, start default 15s PRE timer
+                start(15, "PRE - 15 saniye geri sayım başladı");
+            } else {
+                // Toggle pause state
+                isPaused = !isPaused;
+                pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i> DEVAM ET' : '<i class="fas fa-pause"></i> DURAKLAT';
+                status.textContent = isPaused ? "Duraklatıldı" : "Devam Ediyor";
+            }
         };
 
         // Fullscreen & Audio Activation on first click
