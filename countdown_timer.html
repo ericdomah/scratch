@@ -252,8 +252,16 @@
             if (timerInterval) {
                 timeLeft += 30;
                 updateDisplay();
-                status.textContent = "30 saniye eklendi";
+                status.textContent = `30 saniye eklendi - Kalan süre: ${timeLeft}s`;
+                
+                // Reset alarm state if time goes back above 5s
+                if (timeLeft > 5) {
+                    display.classList.remove('timer-alert');
+                }
+                
+                // Double beep for confirmation
                 playBeep(1200, 0.1);
+                setTimeout(() => playBeep(1200, 0.1), 150);
             } else {
                 status.textContent = "Lütfen önce bir geri sayım başlatın";
             }
