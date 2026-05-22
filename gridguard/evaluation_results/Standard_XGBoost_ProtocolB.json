@@ -1,0 +1,31 @@
+{
+    "model_name": "Standard_XGBoost_ProtocolB",
+    "seed": 42,
+    "threshold": 0.5,
+    "accuracy": 0.6272644927536232,
+    "precision": 0.1711229946524064,
+    "recall": 0.3867069486404834,
+    "f1_score": 0.23725671918443003,
+    "auroc": 0.5061670371342069,
+    "pr_auc": 0.2908819288642969,
+    "confusion_matrix": {
+        "tn": 1257,
+        "fp": 620,
+        "fn": 203,
+        "tp": 128
+    },
+    "false_positive_rate": 0.3303143313798615,
+    "false_negative_rate": 0.6132930513595166,
+    "per_class": {
+        "normal": {
+            "precision": 0.8609589041095891,
+            "recall": 0.6696856686201386,
+            "f1": 0.7533712915792629
+        },
+        "theft": {
+            "precision": 0.1711229946524064,
+            "recall": 0.3867069486404834,
+            "f1": 0.23725671918443003
+        }
+    }
+}

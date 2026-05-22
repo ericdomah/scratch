@@ -1,0 +1,31 @@
+{
+    "model_name": "CNN_LSTM_Hasan2019_ProtocolB",
+    "seed": 42,
+    "threshold": 0.5,
+    "accuracy": 0.9270833333333334,
+    "precision": 0.7485380116959064,
+    "recall": 0.7734138972809668,
+    "f1_score": 0.7607726597325408,
+    "auroc": 0.905502609904923,
+    "pr_auc": 0.7687155631661725,
+    "confusion_matrix": {
+        "tn": 1791,
+        "fp": 86,
+        "fn": 75,
+        "tp": 256
+    },
+    "false_positive_rate": 0.04581779435269046,
+    "false_negative_rate": 0.22658610271903323,
+    "per_class": {
+        "normal": {
+            "precision": 0.9598070739549839,
+            "recall": 0.9541822056473095,
+            "f1": 0.9569863745658562
+        },
+        "theft": {
+            "precision": 0.7485380116959064,
+            "recall": 0.7734138972809668,
+            "f1": 0.7607726597325408
+        }
+    }
+}

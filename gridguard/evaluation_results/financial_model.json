@@ -1,0 +1,35 @@
+{
+    "constants": {
+        "trnc_tariff_tl_per_kwh": 5.5,
+        "simulated_meters": 1500,
+        "ntl_rate_proxy": 0.052,
+        "avg_daily_kwh_per_meter": 9.1,
+        "days_per_month": 30.44,
+        "model_precision": 0.911,
+        "model_recall": 0.898,
+        "deterrence_multiplier_low": 1.05,
+        "deterrence_multiplier_high": 1.25,
+        "deterrence_source": "Abbas et al. (2024): automated detection systems reduce theft attempts by 5-25% when consumers are aware of active monitoring"
+    },
+    "base_monthly_model": {
+        "energy_dispatched_kwh": 415506.0,
+        "ntl_loss_kwh": 21606.311999999998,
+        "monthly_loss_tl": 118834.71599999999,
+        "direct_recovery_tl": 97216.06679584799,
+        "deterrence_recovery_range": {
+            "low": 102076.87013564039,
+            "high": 121520.08349480998
+        }
+    },
+    "regional_scaled_model": {
+        "scaling_factor": 6.913106,
+        "direct_recovery_tl": 672064.9746627775,
+        "deterrence_recovery_range": {
+            "low": 705668.2233959164,
+            "high": 840081.2183284719
+        },
+        "thesis_reported_direct": 672060.0,
+        "thesis_reported_deterred": 773853.0,
+        "honest_range_defense_string": "TL 705,668 to TL 840,081 per month including deterrence effect"
+    }
+}

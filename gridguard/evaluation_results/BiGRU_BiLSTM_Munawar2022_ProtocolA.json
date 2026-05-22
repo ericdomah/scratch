@@ -1,0 +1,31 @@
+{
+    "model_name": "BiGRU_BiLSTM_Munawar2022_ProtocolA",
+    "seed": 42,
+    "threshold": 0.5,
+    "accuracy": 0.9615036231884058,
+    "precision": 0.875,
+    "recall": 0.8670694864048338,
+    "f1_score": 0.8710166919575114,
+    "auroc": 0.9383183617233259,
+    "pr_auc": 0.8596910530005968,
+    "confusion_matrix": {
+        "tn": 1836,
+        "fp": 41,
+        "fn": 44,
+        "tp": 287
+    },
+    "false_positive_rate": 0.02184336707511987,
+    "false_negative_rate": 0.13293051359516617,
+    "per_class": {
+        "normal": {
+            "precision": 0.9765957446808511,
+            "recall": 0.9781566329248801,
+            "f1": 0.9773755656108597
+        },
+        "theft": {
+            "precision": 0.875,
+            "recall": 0.8670694864048338,
+            "f1": 0.8710166919575114
+        }
+    }
+}

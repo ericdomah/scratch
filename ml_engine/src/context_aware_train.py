@@ -12,7 +12,7 @@ from sklearn.metrics import recall_score, precision_score, f1_score
 # --- 1. Context-Aware Dataset Class ---
 
 class EnrichedGridDataset(Dataset):
-    def __init__(self, csv_path, seq_len=30):
+    def __init__(self, csv_path, seq_len=26):
         print(f"Loading Enriched Grid Dataset: {csv_path}")
         df = pd.read_csv(csv_path)
         
@@ -67,7 +67,7 @@ class EnrichedGridDataset(Dataset):
 # --- 2. Context-Aware Model Architecture ---
 
 class GridGuardContextModel(nn.Module):
-    def __init__(self, seq_len=30, dynamic_dim=2, num_regions=4, num_types=2):
+    def __init__(self, seq_len=26, dynamic_dim=2, num_regions=4, num_types=2):
         super(GridGuardContextModel, self).__init__()
         
         # 1. Temporal Head (Processes Consumption + Grid Load)

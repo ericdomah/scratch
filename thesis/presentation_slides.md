@@ -23,7 +23,7 @@
 *   **Bullet Points:**
     *   Our model doesn't just look at the individual meter; it looks at the surrounding **transformer load**.
     *   If a house's consumption drops, but the neighborhood's demand is high, it is highly suspicious.
-    *   This simple but profound contextual correlation boosts Precision to **90.6%**.
+    *   This simple but profound contextual correlation boosts Precision to **91.1%**.
 
 ## Slide 4: The Architecture (Two-Tier Cascade)
 *   **Headline:** Edge-to-Cloud Meta-Ensemble
@@ -51,9 +51,9 @@
 ## Slide 7: Results & Benchmarking
 *   **Headline:** Superiority over Baseline Models
 *   **Table:**
-    *   *Industry Baseline (XGBoost):* Recall 2.0% | F1 0.04
-    *   *Academic Baseline (Vanilla LSTM):* Precision 8.1% | F1 0.15
-    *   **GridGuard Context-Aware:** Recall 100% | Precision 90.6% | **F1 0.95**
+    *   *Industry Baseline (XGBoost):* Recall 85.7% | Precision 85.1% | F1 0.854 (No Edge filter baseline)
+    *   *Academic Baseline (Vanilla LSTM):* Precision 8.0% | F1 0.08 (Uncalibrated raw training)
+    *   **GridGuard Context-Aware:** Recall 89.8% | Precision 91.1% | **F1 0.905**
 *   **Visual:** The comparative ROC and Precision-Recall Curves (from the `outputs` folder).
 
 ## Slide 8: Live Demonstration
@@ -68,7 +68,7 @@
 *   **Headline:** A production-ready blueprint for national deployment.
 *   **Bullet Points:**
     *   Successfully solved the false positive crisis.
-    *   Provided legally defensible XAI.
+    *   Provided forensically detailed and operationally complete XAI. (Note: Legal defensibility requires regulatory and forensic validation outside the scope of this thesis).
     *   **Future Work:** Edge model distillation (running the model entirely on the meter hardware) and GDPR-compliant federated learning.
 
 ## Slide 10: Q&A

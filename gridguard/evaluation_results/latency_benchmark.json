@@ -1,0 +1,41 @@
+{
+    "hardware_specs": {
+        "os": "Windows",
+        "os_release": "10",
+        "cpu_architecture": "AMD64",
+        "cpu_model": "Intel64 Family 6 Model 142 Stepping 12, GenuineIntel",
+        "python_version": "3.12.10",
+        "torch_version": "2.11.0+cpu",
+        "cuda_available": false,
+        "gpu_model": "None"
+    },
+    "benchmark_parameters": {
+        "num_warmups": 1000,
+        "num_runs": 10000,
+        "cascade_routing_rate": 0.2
+    },
+    "edge_tier_xgboost": {
+        "mean_ms": 0.6630882639437914,
+        "median_ms": 0.6074998527765274,
+        "p95_ms": 0.9156988002359867,
+        "p99_ms": 1.06080062687397,
+        "std_dev_ms": 0.38283216994558666,
+        "throughput_tps": 1508.094856109183
+    },
+    "cloud_tier_pytorch": {
+        "mean_ms": 6.224668104574084,
+        "median_ms": 5.8472491800785065,
+        "p95_ms": 9.391489811241623,
+        "p99_ms": 16.520985364913976,
+        "std_dev_ms": 3.3121637381389157,
+        "throughput_tps": 160.65113564290573
+    },
+    "cascade_combined": {
+        "mean_ms": 1.8773005010560155,
+        "median_ms": 0.5956506356596947,
+        "p95_ms": 7.1610089391469955,
+        "p99_ms": 10.338304974138737,
+        "std_dev_ms": 3.1702504041983266,
+        "throughput_tps": 532.6797704669455
+    }
+}

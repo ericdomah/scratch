@@ -1,0 +1,31 @@
+{
+    "model_name": "TestGuard_Model",
+    "seed": 42,
+    "threshold": 0.5,
+    "accuracy": 0.951,
+    "precision": 0.8291139240506329,
+    "recall": 0.8562091503267973,
+    "f1_score": 0.842443729903537,
+    "auroc": 0.9843430485141714,
+    "pr_auc": 0.9430700852076086,
+    "confusion_matrix": {
+        "tn": 820,
+        "fp": 27,
+        "fn": 22,
+        "tp": 131
+    },
+    "false_positive_rate": 0.031877213695395513,
+    "false_negative_rate": 0.1437908496732026,
+    "per_class": {
+        "normal": {
+            "precision": 0.9738717339667459,
+            "recall": 0.9681227863046045,
+            "f1": 0.9709887507400828
+        },
+        "theft": {
+            "precision": 0.8291139240506329,
+            "recall": 0.8562091503267973,
+            "f1": 0.842443729903537
+        }
+    }
+}

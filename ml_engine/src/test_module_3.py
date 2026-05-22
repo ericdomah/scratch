@@ -3,7 +3,7 @@ from data_loader import ElectricityDataset
 import os
 
 def test_preprocessing():
-    csv_path = "c:/Users/eric.domah/.gemini/antigravity/scratch/data/datasetsmall.csv"
+    csv_path = "c:/Users/User/Downloads/scratch-main/data/datasetsmall.csv"
     
     # 1. Load with Preprocessing
     print("--- Testing Module 3: Preprocessing Pipeline ---")
@@ -19,7 +19,7 @@ def test_preprocessing():
     assert 0.0 <= x.min().item() <= 1.0, "Scaling failed (min)"
     assert 0.0 <= x.max().item() <= 1.0, "Scaling failed (max)"
     
-    print("\n✅ Module 3 Verification Complete! Data is cleaned, clipped, and normalized.")
+    print("\n[SUCCESS] Module 3 Verification Complete! Data is cleaned, clipped, and normalized.")
 
 if __name__ == "__main__":
     test_preprocessing()

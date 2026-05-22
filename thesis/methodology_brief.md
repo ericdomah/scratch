@@ -8,9 +8,9 @@ Instead of a single monolithic model, GridGuard AI uses a **two-tier cascade**:
 2.  **Tier 2 (Cloud Node)**: High-confidence flags are routed to a **Deep Learning Ensemble** (Bi-LSTM + Transformer). This ensemble performs deep forensic analysis on the specific tensor sequence to confirm theft.
 
 ## 2. Explainable AI (XAI) Integration
-To ensure the system is legally and ethically sound for utility use, we integrated **SHAP (SHapley Additive exPlanations)**.
-- **Goal**: Provide human-readable justifications for every automated alert.
-- **Implementation**: The backend calculates the contribution of each electrical feature (e.g., Voltage Imbalance) to the final theft probability score.
+To ensure the system provides forensically detailed and operationally complete explanations for utility use, we integrated **1D Time-Series Integrated Gradients** (note that legal defensibility requires regulatory and forensic validation outside the scope of this thesis).
+- **Goal**: Provide human-readable, temporal justifications for every automated alert.
+- **Implementation**: The backend calculates attribution scores for each hourly smart meter reading within a 7-day window, outputting suspicious temporal heatmaps.
 
 ## 3. Grid Financial & Forensic Analytics
 Beyond raw detection, the system provides an economic layer to justify utility intervention:

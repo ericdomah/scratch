@@ -1,0 +1,83 @@
+{
+    "title": "GridGuard AI Data Provenance and Pipeline Audit Report",
+    "metadata": {
+        "raw_file": "c:/Users/User/Downloads/scratch-main/data/datasetsmall.csv",
+        "seed_used": 42,
+        "target_class_prevalence": 0.15,
+        "allowable_drift": 0.02
+    },
+    "steps": [
+        {
+            "step": 1,
+            "description": "Raw SGCC telemetry records loaded",
+            "total_records": 25863,
+            "normal_records": 23741,
+            "theft_records": 2122,
+            "theft_ratio": 0.0820477129490005,
+            "action_taken": "Loaded source smart meter database containing 26 weekly readings per consumer."
+        },
+        {
+            "step": 2,
+            "description": "After missing value imputation",
+            "total_records": 25863,
+            "normal_records": 23741,
+            "theft_records": 2122,
+            "theft_ratio": 0.0820477129490005,
+            "action_taken": "Applied linear interpolation to resolve missing values without row deletion."
+        },
+        {
+            "step": 3,
+            "description": "After 3-sigma outlier removal (clipping)",
+            "total_records": 25863,
+            "normal_records": 23741,
+            "theft_records": 2122,
+            "theft_ratio": 0.0820477129490005,
+            "action_taken": "Clipped extreme spikes exceeding 3 Z-scores per consumer to prevent model distortion."
+        },
+        {
+            "step": 4,
+            "description": "After TheftInjector injection",
+            "total_records": 25863,
+            "normal_records": 21984,
+            "theft_records": 3879,
+            "theft_ratio": 0.14998260062637744,
+            "action_taken": "Injected synthetic theft templates into normal records to achieve the target 15% class prevalence."
+        },
+        {
+            "step": 5,
+            "description": "After windowing into sequences of length 26",
+            "total_records": 25863,
+            "normal_records": 21984,
+            "theft_records": 3879,
+            "theft_ratio": 0.14998260062637744,
+            "action_taken": "Aggregated 15-minute readings into 26-week sequence steps to represent a 6-month seasonal profile."
+        },
+        {
+            "step": 6,
+            "description": "After 80/20 stratified partition split",
+            "train_partition": {
+                "total": 20690,
+                "normal": 17586,
+                "theft": 3104,
+                "ratio": 0.15002416626389561
+            },
+            "test_partition": {
+                "total": 5173,
+                "normal": 4397,
+                "theft": 776,
+                "ratio": 0.15000966557123527
+            },
+            "action_taken": "Split records into train and test partitions while preserving the 85:15 class ratio."
+        },
+        {
+            "step": 7,
+            "description": "Benchmarking & Holdout validation sampling",
+            "active_training_cohort": 5000,
+            "holdout_validation_cohort": 2208,
+            "holdout_normal": 2002,
+            "holdout_theft": 206,
+            "holdout_theft_ratio": 0.09329710144927536,
+            "action_taken": "Subsampled 5,000 sequences for model training to respect computational budget, and established a fixed 2,208 holdout validation cohort."
+        }
+    ]
+}

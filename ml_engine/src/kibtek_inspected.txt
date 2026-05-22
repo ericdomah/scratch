@@ -1,0 +1,283 @@
+
+================ INSPECTING: Bölgesel Tüketici Adetleri 2023.pdf ================
+Total Pages: 12
+
+--- Page 1 ---
+TÜKETİCİ GRUPLARI Lefkoşa Mağusa Girne Gyurt İskele Toplam
+01. GECİCİ AKIM 657 376 771 152 172 2.128
+02. KONUT TARİFESİ 56.762 31.777 47.478 13.339 18.355 167.711
+03. TİCARİ TARİFE I 7.744 4.245 4.829 1.759 1.634 20.211
+04. TİCARİ TARİFE II 246 81 87 33 22 469
+05. ENDÜSTRİ TARİFESİ I 465 313 164 188 114 1.244
+06. ENDÜSTRİ TARİFESİ II 229 63 19 19 20 350
+07. TURİZM TARİFESİ I 10 8 100 3 23 144
+08. TURİZM TARİFESİ II 6 22 74 1 17 120
+204. SU MOTORLARI TARİFESİ 444 738 681 930 407 3.200
+12. SAVUNMA TARİFESİ 770 230 295 585 7 1.887
+10. SOKAK ISIKLARI TARİFESİ 35 18 20 2 8 83
+102. SOSYAL YARDIM TARİFESİ 193 224 77 215 295 1.004
+103. MERDEVEN AYAKLARI 3.558 969 1.906 197 200 6.830
+109. SOĞUK ZİNCİR VE AGILLAR 317 172 4 29 11 533
+105. DEVLET TARİFESİ 457 96 202 155 154 1.064
+101. KIBTEK SOKAK AYD. 732 395 717 247 293 2.384
+14M Endüstri Tarifesi %5 0
+17.CASINOLAR 25 11 1 7 3 47
+117.CASINOLAR (mdi) 8 2 2 12
+15.VAKIFLAR TARİFESİ 82 56 43 39 65 285
+16.ÜNVERSİTELER (mdi) 15 26 11 8 60
+20. KONUT ÇOKLU TARİFE 20 22 27 5 23 97
+202 TC ELÇİLİĞİ 0
+203 DİPLOMAT TARİFESİ 03 8 3 1 12
+30. TİCARİ ÇOKLU TARİFE 1 2 3
+33. MERDEVEN AYAĞI ÇOKLU TARİFE 0
+34. SU MOTORU ÇOKLU TARİFE 1 1
+35. SOĞUK ZİNCİR VE AĞILLAR ÇOKLU 0
+Endüstri Çoklu Tarife 1 1
+4D. YÜKSEK GERİLİM ENDÜSTRİ TARİFESİ 1 1
+6B.ENDÜSTRİ TARİFESİ %5 1 1
+4M. ENDÜSTRİ TARİFESİ II 0
+Üretim Paneli 158 54 31 63 34 340
+Güneş İç Tüketim 3 3
+Toplam 72.943 39.902 57.540 17.980 21.860 210.225
+Kıbrıs Türk Elektrik Kurumu 
+2023 Yılı Bölgesel Tüketici Adetl
+
+--- Page 2 ---
+TÜKETİCİ GRUPLARI Lefkoşa Mağusa Girne Gyurt İskele Toplam
+01. GECİCİ AKIM 651 378 773 152 174 2.128
+02. KONUT TARİFESİ 56.930 31.801 47.553 13.350 18.504 168.138
+03. TİCARİ TARİFE I 7.760 4.238 4.860 1.759 1.643 20.260
+04. TİCARİ TARİFE II 246 81 87 33 22 469
+05. ENDÜSTRİ TARİFESİ I 463 312 163 187 114 1.239
+06. ENDÜSTRİ TARİFESİ II 229 63 19 19 20 350
+07. TURİZM TARİFESİ I 10 8 100 3 23 144
+08. TURİZM TARİFESİ II 6 22 74 1 17 120
+204. SU MOTORLARI TARİFESİ 445 739 678 931 406 3.199
+10. SOKAK ISIKLARI TARİFESİ 35 18 20 2 8 83
+101. KIBTEK SOKAK AYD. 734 395 717 247 294 2.387
+102. SOSYAL YARDIM TARİFESİ 206 242 81 224 316 1.069
+103. MERDEVEN AYAKLARI 3.562 971 1.912 197 200 6.842
+109. SOĞUK ZİNCİR VE AGILLAR 317 173 4 29 11 534
+17.CASINOLAR 25 11 1 7 3 47
+12. SAVUNMA TARİFESİ 770 230 295 585 7 1.887
+105. DEVLET TARİFESİ 457 196 202 155 155 1.165
+15.VAKIFLAR TARİFESİ 82 56 43 39 65 285
+16.ÜNVERSİTELER (mdi) 15 26 11 8 60
+117.CASINOLAR (mdi) 8 2 2 0 12
+20. KONUT ÇOKLU TARİFE 21 22 26 5 20 94
+203 DİPLOMAT TARİFESİ 03 8 7 1 16
+30. TİCARİ ÇOKLU TARİFE 1 2 3
+14M Endüstri Tarifesi %5 0
+202 TC ELÇİLİĞİ 0
+33. MERDEVEN AYAĞI ÇOKLU TARİFE 0
+34. SU MOTORU ÇOKLU TARİFE 1 1
+35. SOĞUK ZİNCİR VE AĞILLAR ÇOKLU 0
+Endüstri Çoklu Tarife 1 1
+4D. YÜKSEK GERİLİM ENDÜSTRİ TARİFESİ 0
+6B.ENDÜSTRİ TARİFESİ %5 1 1
+4M. ENDÜSTRİ TARİFESİ II 0
+Üretim Paneli 158 55 31 63 4 311
+Güneş İç Tüketim 0
+Toplam 73.140 40.047 57.653 17.997 22.008 210.845
+Şub.23
+========================================================
+
+
+================ INSPECTING: 2024 statistic.pdf ================
+Total Pages: 1
+
+--- Page 1 ---
+ÜRETİM SANTRALLARI OCAK ŞUBAT MART NİSAN MAYIS HAZİRAN TEMMUZ AĞUSTOS EYLÜL EKİM KASIM ARALIK TOPLAM Üretim %
+Tek. Buhar Türb.  S. U.1 25.072 23.315 13.036 0 12.501 28.040 27.975 129.939 %10,83
+Tek. Buhar Türb.  S. U.2 24.784 22.733 23.554 13.368 0 23.375 31.284 139.097 %11,60
+Kalecik DG 72.155 71.009 71.714 72.158 72.871 85.310 99.818 545.034 %45,44
+Teknecik Dizel Jen 39.766 29.404 27.520 29.963 42.376 53.001 49.865 271.895 %22,67
+serhatköy solar 47 66 89 90 100 97 0 488 %0,04
+Gaz Türbinleri 424 112 28 324 324 4.792 21.820 27.824 %2,32
+PV toplam Kurulu Güç MW 7.267 6.847 8.924 12.373 13.134 14.489 12.930 75.964 %6,33
+Güneyden Alınan 1.959 897 611 616 806 5.230 4.010 14.129 %1,18
+TOP Üretim KKTC 169.515 153.486 144.866 128.274 141.307 214.332 247.701 0 0 0 0 0 1.199.481 %100,00
+TÜKETİCİ GRUPLARI OCAK ŞUBAT MART NİSAN MAYIS HAZİRAN TEMMUZ AĞUSTOS EYLÜL EKİM KASIM ARALIK TOPLAM Tüketim %
+01. GECİCİ AKIM 3.940 3.922 3.979 3.352 3.790 7.058 26.042 %2,90
+02. KONUT TARİFESİ 67.320 59.459 49.000 38.326 41.134 76.036 331.275 %36,92
+03. TİCARİ TARİFE I 18.139 25.822 15.696 16.426 18.984 26.066 121.133 %13,50
+04. TİCARİ TARİFE II 14.076 12.379 16.604 9.784 14.922 22.457 90.222 %10,06
+05. ENDÜSTRİ TARİFESİ I 2.018 1.860 1.777 1.675 1.872 2.272 11.475 %1,28
+06. ENDÜSTRİ TARİFESİ II 10.943 9.091 9.794 8.980 10.221 11.103 60.132 %6,70
+07. TURİZM TARİFESİ I 509 430 390 345 383 634 2.691 %0,30
+08. TURİZM TARİFESİ II 16.736 13.990 13.376 18.021 21.356 27.054 110.533 %12,32
+204. SU MOTORLARI T
+========================================================
+
+
+================ INSPECTING: 2023 TUKETIM RAPORU.pdf ================
+Total Pages: 37
+
+--- Page 1 ---
+Sistem Kontrol Merkezi 2023  Tüketim Verileri
+TARIH 01.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 10:17
+EN YÜKSEK TÜKETİM SAATİ 18:09
+EN DUŞUK TUKETİM MW 144,39
+EN YÜKSEK TÜKETİM MW 279,74
+TARIH 02.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 04:06
+EN YÜKSEK TÜKETİM SAATİ 19:13
+EN DUŞUK TUKETİM MW 155,79
+EN YÜKSEK TÜKETİM MW 297,68
+TARIH 03.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 12:46
+EN YÜKSEK TÜKETİM SAATİ 18:53
+EN DUŞUK TUKETİM MW 155,20
+EN YÜKSEK TÜKETİM MW 299,57
+TARIH 04.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 12:54
+EN YÜKSEK TÜKETİM SAATİ 19:16
+EN DUŞUK TUKETİM MW 147,87
+EN YÜKSEK TÜKETİM MW 304,68
+TARIH 05.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 12:48
+EN YÜKSEK TÜKETİM SAATİ 19:34
+EN DUŞUK TUKETİM MW 156,50
+EN YÜKSEK TÜKETİM MW 295,31
+TARIH 06.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 03:58
+EN YÜKSEK TÜKETİM SAATİ 18:37
+EN DUŞUK TUKETİM MW 167,37
+EN YÜKSEK TÜKETİM MW 296,91
+TARIH 07.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 10:42
+EN YÜKSEK TÜKETİM SAATİ 18:25
+EN DUŞUK TUKETİM MW 159,16
+EN YÜKSEK TÜKETİM MW 284,76
+TARIH 08.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 10:48
+EN YÜKSEK TÜKETİM SAATİ 17:56
+EN DUŞUK TUKETİM MW 150,16
+EN YÜKSEK TÜKETİM MW 290,83
+TARIH 09.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 04:25
+EN YÜKSEK TÜKETİM SAATİ 17:55
+EN DUŞUK TUKETİM MW 157,07
+EN YÜKSEK TÜKETİM MW 303,5
+TARIH 10.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 13:05
+EN YÜKSEK TÜKETİM SAATİ 19:14
+EN DUŞUK TUKETİM MW 161,64
+EN YÜKSEK TÜKETİM MW 316,31
+
+--- Page 2 ---
+Sistem Kontrol Merkezi 2023  Tüketim Verileri
+TARIH 11.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 03:27
+EN YÜKSEK TÜKETİM SAATİ 18:10
+EN DUŞUK TUKETİM MW 164,05
+EN YÜKSEK TÜKETİM MW 307,15
+TARIH 12.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 03:48
+EN YÜKSEK TÜKETİM SAATİ 19:10
+EN DUŞUK TUKETİM MW 161,26
+EN YÜKSEK TÜKETİM MW 318
+TARIH 13.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 03:53
+EN YÜKSEK TÜKETİM SAATİ 19:01
+EN DUŞUK TUKETİM MW 164,17
+EN YÜKSEK TÜKETİM MW 317
+TARIH 14.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 04:10
+EN YÜKSEK TÜKETİM SAATİ 19:00
+EN DUŞUK TUKETİM MW 168,60
+EN YÜKSEK TÜKETİM MW 311
+TARIH 15.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 04:50
+EN YÜKSEK TÜKETİM SAATİ 18:09
+EN DUŞUK TUKETİM MW 166,21
+EN YÜKSEK TÜKETİM MW 311,80
+TARIH 16.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 04:33
+EN YÜKSEK TÜKETİM SAATİ 17:57
+EN DUŞUK TUKETİM MW 158,44
+EN YÜKSEK TÜKETİM MW 329,42
+TARIH 17.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 04:05
+EN YÜKSEK TÜKETİM SAATİ 18:25
+EN DUŞUK TUKETİM MW 168,59
+EN YÜKSEK TÜKETİM MW 310
+TARIH 18.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 12:25
+EN YÜKSEK TÜKETİM SAATİ 18:27
+EN DUŞUK TUKETİM MW 144,4
+EN YÜKSEK TÜKETİM MW 290,40
+TARIH 19.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 03:31
+EN YÜKSEK TÜKETİM SAATİ 18:37
+EN DUŞUK TUKETİM MW 163,23
+EN YÜKSEK TÜKETİM MW 300,92
+TARIH 20.01.2023
+EN DÜŞÜK TÜKETİM SAATİ 12:58
+EN YÜKSEK TÜKETİM SAATİ 18:43
+EN DUŞUK TUKETİM MW 145,50
+EN YÜKSEK TÜKETİM MW 287,30
+========================================================
+
+
+================ INSPECTING: 2023 KESINTI RAPORU.pdf ================
+Total Pages: 506
+
+--- Page 1 ---
+ KIB-TEK Sistem Kontrol Merkezi Ocak 2023 Günlük Kesinti Raporları
+KESİNTİ ZAMANI ENERJILEME ZAMANI AÇIKLAMAKESİNTİDEN ETKİLENEN  BÖLGELER
+01.01.2023 00:21:00 01.01.2023 01:18:03 Havai Hat ArızasıDoğancı ve bölgedeki su motorları, Taşpınar ve bölgedeki tesis ve su 
+motorları, Fikri Orakçıoğlu Koruluğu ve civarı
+02.01.2023 11:04:00 02.01.2023 11:23:00 Havai Hat ArızasıYeşilırmak, Yeşilırmak sınır kapısı ve bölgedeki su motorları
+02.01.2023 13:49:00 02.01.2023 15:12:00 Havai Hat ArızasıTaşpınar ve bölgedeki tesis ve su motorları
+02.01.2023 18:53:45 26.12.2022 19:49:08 Santral ArızasıÇamlıbel, Tepebaşı, Koruçam, Akdeniz, Kayalar ve Sadrazamköy
+02.01.2023 21:45:18 02.01.2023 23:57:17 Havai Hat ArızasıAsagi Dikmen, Yukari Dikmen, Bogaz Pi knik Alani bolgesi, Bogaz ve 
+Agirdag
+03.01.2023 09:03:30 03.01.2023 14:57:14 Planlı Bakım / Onarım 
+Çalışması
+Asagi Dikmen, Yukari Dikmen, Bogaz Pi knik Alani bolgesi, Bogaz ve 
+Agirdag
+03.01.2023 09:03:38 03.01.2023 14:57:31 Planlı Bakım / Onarım 
+Çalışması
+Yukarı Dikmen, Yukarı Dikmen Su Kuyuları Bölgesi, Yukarı Dikmen 
+Ağıllar Bölgesi ve Dikmen Kırıkkale Asker
+03.01.2023 09:03:45 03.01.2023 14:56:50 Planlı Bakım / Onarım 
+Çalışması
+Dikmen Koy ici ve Dikmen Kirsal kesim arsalari bolgesi
+03.01.2023 09:03:56 03.01.2023 14:56:14 Planlı Bakım / Onarım 
+Çalışması
+Gungor ,Taskent ve Gungor Tas ocaklari bolgesi
+03.01.2023 09:04:51 03.01.2023 17:29:49 Planlı Bakım / Onarım 
+Çalışması
+Gürpınar ve Yılmazköy Serhatköy, Serhatköy Su Pompa İstasyonu, 
+Gayr
+
+--- Page 2 ---
+KESİNTİ ZAMANI ENERJILEME ZAMANI AÇIKLAMAKESİNTİDEN ETKİLENEN  BÖLGELER
+03.01.2023 09:07:39 03.01.2023 17:32:38 Planlı Bakım / Onarım 
+Çalışması
+Türkeli, Lefkoşa/Güzelyurt anayolu üzerinde Türkeli kavşağı ile 
+Alayköy Sanayi Bölgesi arasında kalan tesisler, Alayköy ve Metehan 
+Sınır Kapısı Bölgesi, Yenikent Vedat Benzinci’nin güneyi
+03.01.2023 09:22:24 03.01.2023 17:26:52 Planlı Bakım / Onarım 
+Çalışması
+Eski Gönyeli-Boğaz yolunda Polis Lojmanları ile Mülk Sitesi arası 
+bölge, Boğaz Polis Lojmanları ile Karter Kışlası arası bölge
+03.01.2023 23:15:14 04.01.2023 00:27:45 Havai Hat ArızasıKaraağaç Sahil Siteler Bölgesi, Karaağaç Köy Yolu ve Karaağaç Köyü, 
+Karaağaç Su Pompası, Esentepe Sahil, Esentepe Köy İçi, Futbol Sahası 
+Bölgesi ve Su Pompası, Esentepe Doğu Sahil, Bahçeli Köyü, Bahçeli Su 
+Pompası ve Bahçeli Sahil Bölgesi
+04.01.2023 09:04:28 04.01.2023 09:09:37 Planlı Bakım / Onarım 
+Çalışması
+Balıkesir, Ercan Havaalanı’nın bir Bölümü, Değirmenlik, Minareliköy, 
+Demirhan, Başpınar, Degirmenlik Ağıllar Bölgesi ve Değirmenlik Kırsal 
+Kesim Arsaları
+04.01.2023 12:15:31 04.01.2023 13:13:51 Bakım/Onarım Çalışmasıİskele ve Longbeach Bölgesi, Ötüken, Aygün ve Kuzucuk
+04.01.2023 20:06:00 04.01.2023 20:39:00 Havai Hat Arızasıcengizköy ve yeşilyurtun bir bölümü
+05.01.2023 09:13:54 05.01.2023 09:38:00 Planlı Proje ÇalışmasıGülseren Bölgesi, Gülseren Askeri Kışla, Karakol Bölgesi’nin bir 
+bölümü ve Sakarya Bölgesi
+05.01.2023 17:44:22 05.01.2023 19:26:07 Santral ArızasıMerit Royal Hotel
+
+========================================================
+

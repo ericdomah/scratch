@@ -45,21 +45,17 @@ def run_ultimate_benchmark():
     xgb = XGBoostBaseline()
     if os.path.exists("best_xgb_augmented.pkl"):
         xgb.load_model("best_xgb_augmented.pkl")
-        # XGB expects (batch, seq_len * features) or similar
-        # For simplicity, we use the consumption sequence from dynamic_tensor
-        xgb_input = dynamic_tensor[:, :, 0].cpu().numpy()
+        xgb_input = dynamic_tensor.cpu().numpy()
         probs_dict["XGBoost Baseline"] = xgb.predict_proba(xgb_input)
 
     # Model B: Previous Hybrid (Non-Contextual)
     print(">> Evaluating Universal Hybrid DL...")
-    hybrid = GridGuardUniversalHybrid().to(device)
+    hybrid = GridGuardUniversalHybrid(window_size=26, input_dim=2).to(device)
     if os.path.exists("best_model_balanced.pth"):
         hybrid.load_state_dict(torch.load("best_model_balanced.pth", map_location=device))
         hybrid.eval()
         with torch.no_grad():
-            # Universal Hybrid only expects consumption
-            dl_input = dynamic_tensor[:, :, 0].unsqueeze(-1)
-            probs = torch.sigmoid(hybrid(dl_input)).squeeze().cpu().numpy()
+            probs = torch.sigmoid(hybrid(dynamic_tensor)).squeeze().cpu().numpy()
             probs_dict["Universal Hybrid DL"] = probs
 
     # Model C: NEW Context-Aware Model

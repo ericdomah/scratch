@@ -1,0 +1,31 @@
+{
+    "model_name": "Logistic_Regression_ProtocolA",
+    "seed": 42,
+    "threshold": 0.5,
+    "accuracy": 0.8201992753623188,
+    "precision": 0.39285714285714285,
+    "recall": 0.36555891238670696,
+    "f1_score": 0.37871674491392804,
+    "auroc": 0.7141176300164015,
+    "pr_auc": 0.3851383458019168,
+    "confusion_matrix": {
+        "tn": 1690,
+        "fp": 187,
+        "fn": 210,
+        "tp": 121
+    },
+    "false_positive_rate": 0.09962706446457112,
+    "false_negative_rate": 0.6344410876132931,
+    "per_class": {
+        "normal": {
+            "precision": 0.8894736842105263,
+            "recall": 0.9003729355354289,
+            "f1": 0.8948901244373841
+        },
+        "theft": {
+            "precision": 0.39285714285714285,
+            "recall": 0.36555891238670696,
+            "f1": 0.37871674491392804
+        }
+    }
+}

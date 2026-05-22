@@ -1,0 +1,29 @@
+{
+    "test_1_attribution_concentration": {
+        "metric_name": "Attribution Concentration Score (ACS)",
+        "observed_value": 0.5951940311003147,
+        "threshold": 0.5,
+        "verdict": "PASS"
+    },
+    "test_2_theft_type_discriminability": {
+        "metric_name": "Inter-Class Cosine Distance",
+        "observed_value": 0.7279074816043712,
+        "threshold": 0.3,
+        "verdict": "PASS"
+    },
+    "test_3_temporal_precision": {
+        "metric_name": "Temporal Precision Score (IoU)",
+        "observed_value": 0.677912621359223,
+        "threshold": 0.5,
+        "verdict": "PASS"
+    },
+    "test_4_lexical_diversity": {
+        "metric_name": "Type-Token Ratio (TTR)",
+        "observed_value": 0.8704929577464788,
+        "max_template_overlap": 0.34146341463414637,
+        "flagged_overlap_count": 0,
+        "threshold_ttr": 0.4,
+        "threshold_overlap": 0.85,
+        "verdict": "PASS"
+    }
+}

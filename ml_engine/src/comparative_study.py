@@ -26,16 +26,15 @@ def evaluate_pytorch_model(model, dataloader, device):
             all_labels.extend(batch_y.cpu().numpy())
     return np.array(all_probs), np.array(all_preds), np.array(all_labels)
 
+from train_hybrid_system_v2 import HybridKibTekSGCCDataset, build_kibtek_gli_lookup
+
 def run_comparative_study():
     print("--- GridGuard AI: Advanced Thesis Benchmarking ---")
     
     # 1. Load Data
     print("Loading Evaluation Dataset...")
-    DATA_PATH = "../../data/data_set_cleaned.csv"
-    if not os.path.exists(DATA_PATH):
-        DATA_PATH = "../data/data_set_cleaned.csv"
-        
-    dataset = ElectricityDataset(DATA_PATH, window_size=30, transform=True)
+    gli_lookup = build_kibtek_gli_lookup()
+    dataset = HybridKibTekSGCCDataset(kibtek_gli_lookup=gli_lookup)
     
     # Use a larger subset for evaluation (5000 samples) to get stable curves
     eval_size = min(5000, len(dataset))
@@ -74,7 +73,7 @@ def run_comparative_study():
 
     # --- 2. Load Super-Hybrid (Balanced Senior) ---
     print(">> Evaluating Balanced Senior Engineer Model...")
-    hybrid_model = GridGuardUniversalHybrid().to(device)
+    hybrid_model = GridGuardUniversalHybrid(window_size=26, input_dim=2).to(device)
     # Priority order: Balanced > Vigorous > Baseline
     weight_paths = ["best_model_balanced.pth", "best_model_vigorous.pth", "best_model.pth"]
     loaded = False

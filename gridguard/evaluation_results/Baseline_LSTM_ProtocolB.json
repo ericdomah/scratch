@@ -1,0 +1,31 @@
+{
+    "model_name": "Baseline_LSTM_ProtocolB",
+    "seed": 42,
+    "threshold": 0.5,
+    "accuracy": 0.14990942028985507,
+    "precision": 0.14990942028985507,
+    "recall": 1.0,
+    "f1_score": 0.2607325718786924,
+    "auroc": 0.5524966722303863,
+    "pr_auc": 0.15895295980625163,
+    "confusion_matrix": {
+        "tn": 0,
+        "fp": 1877,
+        "fn": 0,
+        "tp": 331
+    },
+    "false_positive_rate": 1.0,
+    "false_negative_rate": 0.0,
+    "per_class": {
+        "normal": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+        },
+        "theft": {
+            "precision": 0.14990942028985507,
+            "recall": 1.0,
+            "f1": 0.2607325718786924
+        }
+    }
+}

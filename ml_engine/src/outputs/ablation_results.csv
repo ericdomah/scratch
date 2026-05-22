@@ -1,0 +1,5 @@
+name,use_gli,use_tcn,use_meta,use_twin,f1_mean,f1_std
+Full GridGuard,True,True,True,True,0.2731315033574921,0.16206417767330233
+No GLI (Consumption Only),False,True,True,True,0.4531193855181394,0.010089258161104042
+No Edge Filter (No TCN),True,False,True,True,0.18673355629877367,0.23740454013049095
+No Digital Twin (No Augment),True,True,True,False,0.15198618307426598,0.2149409213969471

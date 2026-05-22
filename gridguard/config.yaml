@@ -1,0 +1,47 @@
+# GridGuard AI Configuration File
+system:
+  seed: 42
+  log_level: "INFO"
+
+data:
+  raw_csv_path: "c:/Users/User/Downloads/scratch-main/data/datasetsmall.csv"
+  evaluation_results_dir: "c:/Users/User/Downloads/scratch-main/gridguard/evaluation_results"
+  figures_dir: "c:/Users/User/Downloads/scratch-main/gridguard/backend/figures"
+  sequence_length: 26  # 26 weeks for Option A (Fix 3)
+  aggregation: "weekly"
+  ramp_rate_constraint: 0.5  # Max ramp rate in kWh
+  class_prevalence: 0.15
+  test_size: 0.20
+  trnc_mode: true  # Enables KIB-TEK / TRNC summer-peak and SCADA telemetry domain adaptation
+
+model:
+  input_dim: 2
+  hidden_dim: 64
+  num_heads: 8
+  seq_len: 26
+  dropout: 0.3
+  learning_rate: 0.0001
+  epochs: 3
+  class_weights:
+    theft: 3.33
+    normal: 0.59
+  fusion:
+    dl_weight: 0.7
+    xgb_weight: 0.3
+
+gli:
+  cache_timeout_minutes: 30
+  population_mean: 0.5
+  historical_days: 7
+
+finance:
+  trnc_tariff_tl_per_kwh: 5.50
+  simulated_meters: 1500
+  ntl_rate_proxy: 0.052
+  avg_daily_kwh_per_meter: 9.1
+  days_per_month: 30.44
+  model_precision: 0.911
+  model_recall: 0.898
+  deterrence_multiplier_low: 1.05
+  deterrence_multiplier_high: 1.25
+  deterrence_source: "Abbas et al. (2024): automated detection systems reduce theft attempts by 5-25% when consumers are aware of active monitoring"

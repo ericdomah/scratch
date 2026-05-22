@@ -1,0 +1,31 @@
+{
+    "model_name": "Random_Forest_ProtocolA",
+    "seed": 42,
+    "threshold": 0.5,
+    "accuracy": 0.8211050724637681,
+    "precision": 0.3967741935483871,
+    "recall": 0.3716012084592145,
+    "f1_score": 0.3837753510140406,
+    "auroc": 0.7059088633755413,
+    "pr_auc": 0.37825455290708143,
+    "confusion_matrix": {
+        "tn": 1690,
+        "fp": 187,
+        "fn": 208,
+        "tp": 123
+    },
+    "false_positive_rate": 0.09962706446457112,
+    "false_negative_rate": 0.6283987915407855,
+    "per_class": {
+        "normal": {
+            "precision": 0.8904109589041096,
+            "recall": 0.9003729355354289,
+            "f1": 0.895364238410596
+        },
+        "theft": {
+            "precision": 0.3967741935483871,
+            "recall": 0.3716012084592145,
+            "f1": 0.3837753510140406
+        }
+    }
+}

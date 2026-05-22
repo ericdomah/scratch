@@ -4,7 +4,7 @@ from theft_injector import TheftInjector
 import os
 
 def test_loading_and_injection():
-    csv_path = "c:/Users/eric.domah/.gemini/antigravity/scratch/data/datasetsmall.csv"
+    csv_path = "c:/Users/User/Downloads/scratch-main/data/datasetsmall.csv"
     
     if not os.path.exists(csv_path):
         print(f"Error: Dataset not found at {csv_path}")
@@ -29,7 +29,7 @@ def test_loading_and_injection():
     print(f"Partial Bypass (readings 5 to 15 should be 0):")
     print(x_partial[4:16].flatten())
 
-    print("\n✅ Module 2 Verification Complete!")
+    print("\n[SUCCESS] Module 2 Verification Complete!")
 
 if __name__ == "__main__":
     test_loading_and_injection()
