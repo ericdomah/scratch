@@ -69,6 +69,7 @@ CHECKPOINT_EVERY = 5
 # Test window = [train_end, min(train_end + 0.14, 1.0)]
 ROUND_TRAIN_ENDS = [0.54, 0.61, 0.68, 0.75, 0.82, 0.89, 0.93]
 TEST_WINDOW_FRAC = 0.14
+WINDOW_SIZE      = 26   # must match thesis architecture (T=26 weekly timesteps)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -288,15 +289,15 @@ def run_walk_forward(
     # ── Guard: no valid splits (dataset too short) ────────────────────────────
     if len(splits) == 0:
         min_weeks_needed = int(n_full_weeks / ROUND_TRAIN_ENDS[0]) + WINDOW_SIZE
-        print(f"\n  [ERROR] No valid walk-forward splits could be formed.")
+        print(f"  [WF] No valid walk-forward splits could be formed.")
         print(f"  Dataset has {n_full_weeks} weeks, window_size={WINDOW_SIZE}.")
         print(f"  win_start_week range: {win_start.min()} to {win_start.max()}")
         print(f"  The 54% cutoff falls at week {int(n_full_weeks * 0.54)}, but")
-        print(f"  all windows start before that — no samples remain for testing.")
-        print(f"  Root cause: you are likely using the synthetic stub data.csv")
-        print(f"  (120 rows, 52 weeks) instead of the real SGCC dataset (~42k rows, ~147 weeks).")
-        print(f"  Fix: extract the real SGCC CSV from the split archive and re-run.")
-        print(f"  See README.md for extraction instructions.")
+        print(f"  all windows start before that -- no samples remain for testing.")
+        print(f"  Root cause: likely using synthetic stub data (120 rows, 52 weeks)")
+        print(f"  instead of real SGCC (~42k rows, ~147 weeks).")
+        print(f"  Fix: upload the real SGCC data.csv to data/sgcc/ and delete")
+        print(f"  data/sgcc/sgcc_processed.pt, then re-run.")
         empty_df = pd.DataFrame(columns=[
             "Round", "Train_samples", "Test_samples", "Theft_frac_test",
             "GG_F1", "GG_AUROC", "GG_Precision", "GG_Recall", "GG_Brier",
