@@ -3,18 +3,25 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-.Python
 
 # Virtual environments
 .venv/
 venv/
 env/
 
-# Cached preprocessed tensors (regenerated on first run)
-data/sgcc/sgcc_processed.pt
-data/tdd2022/tdd2022_processed.pt
+# ── Raw data files (place manually — never tracked by git) ───────────────────
+data/sgcc/*.csv
+data/sgcc/*.zip
+data/sgcc/*.z01
+data/sgcc/*.z02
+data/sgcc/*.pt
+data/tdd2022/*.csv
+data/tdd2022/*.pt
 
-# Trained model weights (too large for git)
+# Cached preprocessed tensors
+*.pt
+
+# Trained model weights
 models/gridguard_sgcc_best.pth
 models/xgboost_sgcc_edge.pkl
 
