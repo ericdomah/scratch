@@ -285,6 +285,29 @@ def run_walk_forward(
     splits = build_wf_splits(win_start, n_full_weeks)
     print(f"  Walk-forward rounds: {len(splits)}")
 
+    # ── Guard: no valid splits (dataset too short) ────────────────────────────
+    if len(splits) == 0:
+        min_weeks_needed = int(n_full_weeks / ROUND_TRAIN_ENDS[0]) + WINDOW_SIZE
+        print(f"\n  [ERROR] No valid walk-forward splits could be formed.")
+        print(f"  Dataset has {n_full_weeks} weeks, window_size={WINDOW_SIZE}.")
+        print(f"  win_start_week range: {win_start.min()} to {win_start.max()}")
+        print(f"  The 54% cutoff falls at week {int(n_full_weeks * 0.54)}, but")
+        print(f"  all windows start before that — no samples remain for testing.")
+        print(f"  Root cause: you are likely using the synthetic stub data.csv")
+        print(f"  (120 rows, 52 weeks) instead of the real SGCC dataset (~42k rows, ~147 weeks).")
+        print(f"  Fix: extract the real SGCC CSV from the split archive and re-run.")
+        print(f"  See README.md for extraction instructions.")
+        empty_df = pd.DataFrame(columns=[
+            "Round", "Train_samples", "Test_samples", "Theft_frac_test",
+            "GG_F1", "GG_AUROC", "GG_Precision", "GG_Recall", "GG_Brier",
+            "Base_F1", "Base_AUROC", "Base_Precision", "Base_Recall",
+        ])
+        csv_path = os.path.join(result_dir, "exp2_walkforward.csv")
+        empty_df.to_csv(csv_path, index=False)
+        print(f"  Empty results saved to {csv_path}")
+        print(f"{'='*60}\n")
+        return empty_df
+
     y_np = y.numpy().astype(int)
     rows = []
 
@@ -341,26 +364,34 @@ def run_walk_forward(
 
     # ── Summary ───────────────────────────────────────────────────────────────
     results_df = pd.DataFrame(rows)
-    gg_f1s     = np.array(gg_f1s)
-    base_f1s   = np.array(base_f1s)
+
+    if results_df.empty:
+        csv_path = os.path.join(result_dir, "exp2_walkforward.csv")
+        results_df.to_csv(csv_path, index=False)
+        print(f"  No rounds completed.  Results -> {csv_path}")
+        print(f"{'='*60}\n")
+        return results_df
+
+    gg_f1s   = np.array(gg_f1s)
+    base_f1s = np.array(base_f1s)
 
     d = cohens_d(gg_f1s, base_f1s)
 
     for metric in ["GG_F1", "GG_AUROC", "GG_Precision", "GG_Recall",
                    "Base_F1", "Base_AUROC"]:
-        vals = results_df[metric].values
+        vals = results_df[metric].values.astype(float)
         mu   = vals.mean()
         sd   = vals.std(ddof=1)
         ci   = ci_95(vals)
-        print(f"  {metric}: {mu:.4f} ± {sd:.4f}  [95%CI ±{ci:.4f}]")
+        print(f"  {metric}: {mu:.4f} +/- {sd:.4f}  [95%CI +/-{ci:.4f}]")
 
     print(f"\n  Cohen's d (GridGuard vs Baseline, F1): {d:.4f}")
 
     summary_row = {
-        "Round":     "mean ± SD",
-        "GG_F1":     f"{gg_f1s.mean():.4f} ± {gg_f1s.std(ddof=1):.4f} [95%CI ±{ci_95(gg_f1s):.4f}]",
-        "Base_F1":   f"{base_f1s.mean():.4f} ± {base_f1s.std(ddof=1):.4f} [95%CI ±{ci_95(base_f1s):.4f}]",
-        "Cohens_d":  round(d, 4),
+        "Round":    "mean +/- SD",
+        "GG_F1":   f"{gg_f1s.mean():.4f} +/- {gg_f1s.std(ddof=1):.4f} [95%CI +/-{ci_95(gg_f1s):.4f}]",
+        "Base_F1": f"{base_f1s.mean():.4f} +/- {base_f1s.std(ddof=1):.4f} [95%CI +/-{ci_95(base_f1s):.4f}]",
+        "Cohens_d": round(d, 4),
     }
     summary_df = pd.DataFrame([summary_row])
     final_df   = pd.concat([results_df, summary_df], ignore_index=True)
@@ -368,7 +399,7 @@ def run_walk_forward(
     csv_path = os.path.join(result_dir, "exp2_walkforward.csv")
     final_df.to_csv(csv_path, index=False)
 
-    print(f"\n  Results → {csv_path}")
+    print(f"\n  Results -> {csv_path}")
     print(f"{'='*60}\n")
 
     return final_df
