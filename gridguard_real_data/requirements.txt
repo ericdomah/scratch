@@ -1,10 +1,17 @@
-torch==2.1.0
-torchvision==0.16.0
-scikit-learn==1.3.0
-xgboost==2.0.2
-numpy==1.24.3
-pandas==2.0.3
-scipy==1.11.2
-matplotlib==3.7.2
-seaborn==0.12.2
-tqdm==4.66.1
+# GridGuard AI Phase 1 — dependencies
+#
+# torch / torchvision are intentionally EXCLUDED here.
+# Colab already has the correct CUDA-enabled build pre-installed.
+# Installing via pip would replace it with a CPU-only wheel.
+#
+# On a fresh non-Colab machine install torch separately:
+#   pip install torch>=2.1.0
+#
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.11.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+tqdm>=4.66.0
