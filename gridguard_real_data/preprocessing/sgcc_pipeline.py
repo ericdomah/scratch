@@ -328,7 +328,7 @@ def run_sgcc_pipeline(
     if cache_path and os.path.isfile(cache_path):
         if verbose:
             print(f"[SGCC] Loading cached tensors from {cache_path}")
-        checkpoint = torch.load(cache_path, map_location="cpu")
+        checkpoint = torch.load(cache_path, map_location="cpu", weights_only=False)
         return checkpoint["X"], checkpoint["y"], checkpoint["metadata"]
 
     df         = load_sgcc(data_dir)

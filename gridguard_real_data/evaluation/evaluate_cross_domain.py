@@ -63,7 +63,7 @@ SGCC_INDOMAIN_AUROC = None
 
 def load_best_model(weights_path: str, device: str) -> GridGuardUniversalHybrid:
     model = GridGuardUniversalHybrid().to(device)
-    model.load_state_dict(torch.load(weights_path, map_location=device))
+    model.load_state_dict(torch.load(weights_path, map_location=device, weights_only=True))
     model.eval()
     return model
 
@@ -181,7 +181,7 @@ def run_exp3_reverse_transfer(
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Load test data
-    ckpt = torch.load(trnc_test_path, map_location="cpu")
+    ckpt = torch.load(trnc_test_path, map_location="cpu", weights_only=False)
     X = ckpt["X"].float()
     y = ckpt["y"].float()
     print(f"  TRNC test: {X.shape}  theft={y.mean():.3%}")

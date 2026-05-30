@@ -369,7 +369,7 @@ def run_tdd2022_pipeline(
     if cache_path and os.path.isfile(cache_path):
         if verbose:
             print(f"[TDD2022] Loading cached tensors from {cache_path}")
-        ckpt = torch.load(cache_path, map_location="cpu")
+        ckpt = torch.load(cache_path, map_location="cpu", weights_only=False)
         return ckpt["X"], ckpt["y"], ckpt["metadata"]
 
     df         = load_tdd2022(data_dir)
