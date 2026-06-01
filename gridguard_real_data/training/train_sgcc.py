@@ -1,14 +1,14 @@
 """
-Experiment 1 — SGCC Standard Cross-Validation Training (Protocol A*)
+Experiment 1 -- SGCC Standard Cross-Validation Training (Protocol A*)
 =====================================================================
 10-fold StratifiedKFold on all SGCC windows.
 Also retrains the XGBoost edge filter on SGCC tabular features.
 
 Outputs
 -------
-  models/gridguard_sgcc_best.pth   — best DL fold by validation F1
-  models/xgboost_sgcc_edge.pkl     — XGBoost edge filter
-  results/exp1_standard_cv.csv     — per-fold metrics + summary
+  models/gridguard_sgcc_best.pth   -- best DL fold by validation F1
+  models/xgboost_sgcc_edge.pkl     -- XGBoost edge filter
+  results/exp1_standard_cv.csv     -- per-fold metrics + summary
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ import xgboost as xgb
 import pandas as pd
 from tqdm import tqdm
 
-# ── path setup so imports work when run directly ──────────────────────────────
+# -- path setup so imports work when run directly ------------------------------
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
@@ -45,9 +45,9 @@ from models.gridguard_model import (
 )
 from preprocessing.sgcc_pipeline import compute_tabular_features
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Constants
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 SEED          = 42
 BATCH_SIZE    = 128
 EPOCHS        = 25
@@ -67,9 +67,9 @@ XGB_PARAMS = dict(
     random_state=SEED,
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Reproducibility
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def set_seed(seed: int = SEED):
     random.seed(seed)
@@ -80,9 +80,9 @@ def set_seed(seed: int = SEED):
     torch.backends.cudnn.benchmark     = False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Metrics Helper
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def compute_metrics(
     y_true: np.ndarray,
@@ -111,9 +111,9 @@ def ci_95(values: np.ndarray) -> float:
     return t_dist.ppf(0.975, df=n - 1) * sd / np.sqrt(n)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Training / Inference Loop
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def train_one_epoch(
     model: nn.Module,
@@ -156,9 +156,9 @@ def get_probabilities(
     return np.concatenate(probs)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  XGBoost Edge Filter Training
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def train_xgboost(
     X_train: np.ndarray,
@@ -168,8 +168,8 @@ def train_xgboost(
     edge_threshold_target_fpr: float = 0.03,
 ) -> tuple:
     """
-    Train the XGBoost edge filter and tune τ_edge to hit the target FPR
-    (≤3 % of normal traffic forwarded to cloud).
+    Train the XGBoost edge filter and tune ?_edge to hit the target FPR
+    (?3 % of normal traffic forwarded to cloud).
 
     Returns
     -------
@@ -191,7 +191,7 @@ def train_xgboost(
 
     val_probs = clf.predict_proba(X_val)[:, 1]
 
-    # Tune τ_edge: find largest threshold where FPR ≤ edge_threshold_target_fpr
+    # Tune ?_edge: find largest threshold where FPR ? edge_threshold_target_fpr
     normal_mask = y_val == 0
     best_tau = 0.60   # thesis default
     for tau in np.linspace(0.30, 0.95, 130):
@@ -200,29 +200,29 @@ def train_xgboost(
             best_tau = tau
             break
 
-    print(f"[XGB] τ_edge tuned to {best_tau:.4f}  "
+    print(f"[XGB] ?_edge tuned to {best_tau:.4f}  "
           f"(FPR on normals: "
           f"{(val_probs[normal_mask] >= best_tau).mean():.3%})")
 
     return clf, best_tau, val_probs
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Late Fusion
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def fuse_predictions(
     p_dl: np.ndarray,
     p_xgb: np.ndarray,
     alpha_dl: float = 0.70,
 ) -> np.ndarray:
-    """Late fusion: 0.70 × P_DL + 0.30 × P_XGB"""
+    """Late fusion: 0.70 x P_DL + 0.30 x P_XGB"""
     return alpha_dl * p_dl + (1 - alpha_dl) * p_xgb
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Main: 10-fold Standard CV  (Experiment 1)
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def run_standard_cv(
     X: torch.Tensor,
@@ -251,7 +251,7 @@ def run_standard_cv(
     set_seed(SEED)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"\n{'='*60}")
-    print(f"  EXPERIMENT 1 — Standard {n_folds}-Fold CV   device={device}")
+    print(f"  EXPERIMENT 1 -- Standard {n_folds}-Fold CV   device={device}")
     print(f"{'='*60}")
 
     model_dir  = os.path.join(output_dir, "models")
@@ -268,11 +268,25 @@ def run_standard_cv(
     best_f1   = -1.0
     best_weights_path = None
 
+    # Resume from partial
+    partial_csv = os.path.join(result_dir, "exp1_standard_cv_partial.csv")
+    completed_folds = set()
+    if os.path.isfile(partial_csv):
+        partial_df = pd.read_csv(partial_csv)
+        fold_rows = partial_df.to_dict('records')
+        completed_folds = {int(r["Fold"]) for r in fold_rows}
+        if fold_rows:
+            best_f1 = max([float(r.get("Fused_F1", -1.0)) for r in fold_rows])
+        print(f"\n  [Resume] Loaded {len(completed_folds)} completed folds from partial CSV. Best F1 so far: {best_f1:.4f}")
+
     # --- precompute XGB tabular features once ---
     feats_np = compute_tabular_features(X_np)   # (N, 5)
 
     for fold, (tr_idx, va_idx) in enumerate(skf.split(X_np, y_np), 1):
-        print(f"\n── Fold {fold}/{n_folds} ──────────────────────────────")
+        print(f"\n-- Fold {fold}/{n_folds} ------------------------------")
+        if fold in completed_folds:
+            print("   [SKIPPED] Already completed.")
+            continue
 
         # DL loaders
         X_tr, y_tr = X[tr_idx], y[tr_idx]
@@ -352,39 +366,46 @@ def run_standard_cv(
             best_xgb_path = os.path.join(model_dir, "xgboost_sgcc_edge.pkl")
             with open(best_xgb_path, "wb") as fh:
                 pickle.dump({"clf": clf, "tau_edge": tau_edge}, fh)
-            print(f"   ★  New best fold (F1={best_f1:.4f}) — weights saved")
+            print(f"   *  New best fold (F1={best_f1:.4f}) -- weights saved")
 
-    # ── Summary statistics ────────────────────────────────────────────────────
+        # Save partial progress after each fold
+        pd.DataFrame(fold_rows).to_csv(partial_csv, index=False)
+
+    # -- Summary statistics ----------------------------------------------------
     results_df = pd.DataFrame(fold_rows)
 
     key_cols = ["Fused_F1", "Fused_AUROC", "Fused_Precision",
                 "Fused_Recall", "Fused_Brier"]
-    summary: Dict = {"Fold": "mean ± SD"}
+    summary: Dict = {"Fold": "mean +/- SD"}
     for col in key_cols:
         vals = results_df[col].values
         mu   = vals.mean()
         sd   = vals.std(ddof=1)
         ci   = ci_95(vals)
-        summary[col] = f"{mu:.4f} ± {sd:.4f}  [95%CI ±{ci:.4f}]"
+        summary[col] = f"{mu:.4f} +/- {sd:.4f}  [95%CI +/-{ci:.4f}]"
 
     summary_df = pd.DataFrame([summary])
     final_df   = pd.concat([results_df, summary_df], ignore_index=True)
 
     csv_path = os.path.join(result_dir, "exp1_standard_cv.csv")
     final_df.to_csv(csv_path, index=False)
+    
+    # Remove partial CSV since we are done
+    if os.path.exists(partial_csv):
+        os.remove(partial_csv)
 
     print(f"\n{'='*60}")
     print(f"  Experiment 1 complete.  Best fold F1 = {best_f1:.4f}")
-    print(f"  Results  → {csv_path}")
-    print(f"  DL model → {best_weights_path}")
+    print(f"  Results  -> {csv_path}")
+    print(f"  DL model -> {best_weights_path}")
     print(f"{'='*60}\n")
 
     return final_df
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  CLI entry-point
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import argparse
