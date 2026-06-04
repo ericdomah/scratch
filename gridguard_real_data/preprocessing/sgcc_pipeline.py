@@ -1,18 +1,36 @@
 """
-SGCC Dataset Preprocessing Pipeline
-=====================================
+SGCC Dataset Preprocessing Pipeline  (Phase 1 — Real-Data Training)
+=====================================================================
 Converts the raw SGCC CSV (one row per consumer, daily kWh readings 2014-01-01
 to 2016-10-31) into a (N, 26, 2) tensor ready for GridGuardUniversalHybrid.
+
+ONE-WINDOW-PER-CONSUMER RULE (NON-NEGOTIABLE):
+----------------------------------------------
+SGCC labels are at the consumer level. FLAG = 0 (normal) or FLAG = 1 (theft).
+There are NO theft onset timestamps. Using sliding windows on theft consumers
+would assign label = 1 to windows from BEFORE the theft began (i.e., normal
+consumption mislabelled as theft). This destroys interpretability.
+
+CORRECT APPROACH: extract EXACTLY ONE 26-week window per consumer — the LAST
+26 weeks of their available data. The most recent period is the one most likely
+to contain the confirmed theft behaviour.
+
+Expected output: ~40,000–42,000 samples, one per consumer, ~5% theft.
+If you see millions of samples the windowing logic is wrong — STOP and fix it.
 
 Pipeline steps
 --------------
 1.  Load CSV — detect CONS_NO / FLAG / date columns automatically
-2.  Drop consumers with >50 % NaN readings; linear-interpolate the rest
-3.  Per-consumer min-max normalisation → [0, 1]
-4.  Daily → weekly aggregation (7-day sums)  →  (N_consumers, ~147 weeks)
-5.  Compute Grid Load Index (GLI) across the whole substation
-6.  Sliding 26-week windows  →  (N_samples, 26) each for kWh and GLI
-7.  Stack into (N_samples, 26, 2)  and split train/test (temporal order)
+2.  Sort date columns chronologically
+3.  Drop consumers with >50 % NaN readings
+4.  Linear-interpolate remaining NaN gaps; fill edges with 0.0
+5.  Aggregate daily → weekly (7-day sums)
+6.  Extract LAST 26 weeks per consumer (ONE window only — see rule above)
+    Drop consumers with fewer than 26 weekly readings
+7.  Per-consumer min-max normalisation → [0, 1]
+8.  Compute Grid Load Index (GLI) across all surviving consumers
+9.  Stack into (N, 26, 2) tensor
+10. Verification: print summary, assert ~5 % theft prevalence
 """
 
 from __future__ import annotations
@@ -32,9 +50,9 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 WINDOW_SIZE = 26   # weeks — must stay 26 to match thesis architecture
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  1.  Loader
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def load_sgcc(data_dir: str) -> pd.DataFrame:
     """
@@ -65,9 +83,9 @@ def load_sgcc(data_dir: str) -> pd.DataFrame:
     return df
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  2-7.  Full Preprocessing
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+#  2–9.  Full Preprocessing
+# -----------------------------------------------------------------------------
 
 def preprocess_sgcc(
     df: pd.DataFrame,
@@ -75,7 +93,7 @@ def preprocess_sgcc(
     verbose: bool = True,
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict]:
     """
-    Run the complete SGCC preprocessing pipeline.
+    Run the complete SGCC preprocessing pipeline (one window per consumer).
 
     Parameters
     ----------
@@ -87,10 +105,10 @@ def preprocess_sgcc(
     -------
     X           : FloatTensor (N, 26, 2)  — channel 0 = kWh, channel 1 = GLI
     y           : FloatTensor (N,)        — 0 = normal, 1 = theft
-    metadata    : dict with consumer / window bookkeeping arrays
+    metadata    : dict with consumer bookkeeping arrays
     """
 
-    # ── Step 1 : identify columns ────────────────────────────────────────────
+    # -- Step 1 : identify columns --------------------------------------------
     id_col    = None
     label_col = None
     date_cols: List[str] = []
@@ -114,7 +132,7 @@ def preprocess_sgcc(
             label_col = meta_cols[1]
         elif len(meta_cols) == 1:
             id_col    = meta_cols[0]
-            label_col = meta_cols[0]   # degenerate; handle below
+            label_col = meta_cols[0]
         else:
             raise ValueError(
                 "Cannot identify consumer-ID / label columns. "
@@ -124,6 +142,12 @@ def preprocess_sgcc(
     if not date_cols:
         raise ValueError("No date columns found in SGCC CSV.")
 
+    # -- Step 2 : sort date columns chronologically ---------------------------
+    try:
+        date_cols = sorted(date_cols, key=pd.to_datetime)
+    except Exception:
+        pass  # if not parseable, keep original order
+
     cons_ids = df[id_col].values.astype(str)
     labels   = df[label_col].values.astype(int)
     raw_data = df[date_cols].values.astype(float)   # (N_consumers, N_days)
@@ -132,22 +156,25 @@ def preprocess_sgcc(
         theft_rate = labels.mean()
         print(f"[SGCC] Consumers : {len(cons_ids):,}")
         print(f"[SGCC] Date cols  : {len(date_cols)}  "
-              f"({date_cols[0]} → {date_cols[-1]})")
+              f"({date_cols[0]} -> {date_cols[-1]})")
         print(f"[SGCC] Theft rate : {theft_rate:.3%}  "
               f"({labels.sum():,} / {len(labels):,})")
 
-    # ── Step 2 : drop >50 % NaN consumers; interpolate the rest ─────────────
+    # -- Step 3 : drop >50 % NaN consumers ------------------------------------
     nan_frac = np.isnan(raw_data).mean(axis=1)
     valid    = nan_frac <= 0.50
     if verbose:
         print(f"[SGCC] Dropping {(~valid).sum():,} consumers "
-              f"(>{50}% NaN).  Remaining: {valid.sum():,}")
+              f"(>50% NaN).  Remaining: {valid.sum():,}")
 
     raw_data = raw_data[valid]
     labels   = labels[valid]
     cons_ids = cons_ids[valid]
+    n_consumers_after_nan = len(labels)
 
-    # Linear interpolation along the time axis for each consumer
+    # -- Step 4 : linear interpolation; fill any edge NaN with 0.0 -----------
+    if verbose:
+        print(f"[SGCC] Interpolating missing values...")
     consumption_clean = np.empty_like(raw_data)
     for i in range(len(raw_data)):
         s = pd.Series(raw_data[i]).interpolate(
@@ -155,90 +182,121 @@ def preprocess_sgcc(
         )
         consumption_clean[i] = s.fillna(0.0).values
 
-    # ── Step 3 : per-consumer min-max normalisation (daily level) ─────────────
-    c_min  = consumption_clean.min(axis=1, keepdims=True)
-    c_max  = consumption_clean.max(axis=1, keepdims=True)
-    c_rng  = np.where(c_max - c_min > 0, c_max - c_min, 1.0)
-    daily_norm = (consumption_clean - c_min) / c_rng   # (N, N_days) in [0,1]
-
-    # ── Step 4 : daily → weekly aggregation ──────────────────────────────────
-    n_consumers, n_days = daily_norm.shape
+    # -- Step 5 : aggregate daily → weekly (7-day sums) -----------------------
+    n_consumers, n_days = consumption_clean.shape
     n_full_weeks = n_days // 7
-    daily_trim   = daily_norm[:, : n_full_weeks * 7]
-    # (N, n_full_weeks, 7) → sum over last axis → (N, n_full_weeks)
+    daily_trim   = consumption_clean[:, : n_full_weeks * 7]
+    # (N, n_full_weeks, 7) → sum over days → (N, n_full_weeks)
     weekly_raw = daily_trim.reshape(n_consumers, n_full_weeks, 7).sum(axis=2)
 
-    # Re-normalise weekly totals per consumer → [0, 1]
-    w_min = weekly_raw.min(axis=1, keepdims=True)
-    w_max = weekly_raw.max(axis=1, keepdims=True)
-    w_rng = np.where(w_max - w_min > 0, w_max - w_min, 1.0)
-    weekly = (weekly_raw - w_min) / w_rng   # (N_consumers, n_full_weeks)
-
     if verbose:
-        print(f"[SGCC] Weekly shape: {weekly.shape}  "
-              f"(consumers × weeks = {n_consumers} × {n_full_weeks})")
+        print(f"[SGCC] Weekly aggregation: {n_consumers} consumers × "
+              f"{n_full_weeks} weeks")
 
-    # ── Step 5 : compute Grid Load Index (GLI) ────────────────────────────────
-    # GLI(t) = Σ_i C_i(t) / max_t [ Σ_i C_i(t) ]
-    # Treat all consumers as one virtual substation (no topology data for SGCC)
-    substation_load = weekly.sum(axis=0)          # (n_full_weeks,)
-    gli_denom       = substation_load.max()
-    gli             = substation_load / (gli_denom if gli_denom > 0 else 1.0)
+    # -- Step 6 : ⚠️  EXTRACT LAST 26 WEEKS ONLY — ONE WINDOW PER CONSUMER ---
+    #
+    #  DO NOT create sliding windows here.
+    #  Each consumer contributes exactly ONE sample: their last 26 weeks.
+    #  This is the only defensible labelling strategy given that SGCC provides
+    #  no theft onset timestamps.
+    #
+    if verbose:
+        print(f"[SGCC] Extracting LAST {window_size} weeks per consumer "
+              f"(ONE window per consumer — no sliding)...")
 
-    # ── Step 6 : sliding 26-week windows ──────────────────────────────────────
-    n_windows_per_consumer = n_full_weeks - window_size + 1
-    if n_windows_per_consumer <= 0:
+    # Drop consumers with fewer than 26 weekly readings
+    enough = n_full_weeks >= window_size
+    if not enough:
         raise ValueError(
-            f"Not enough weeks ({n_full_weeks}) to form even one "
-            f"{window_size}-week window.  Check dataset dates."
+            f"Dataset has only {n_full_weeks} weeks — need at least "
+            f"{window_size}. Check that the full SGCC CSV was supplied."
         )
 
-    total_windows = n_consumers * n_windows_per_consumer
-    X_kwh = np.empty((total_windows, window_size), dtype=np.float32)
-    X_gli = np.empty((total_windows, window_size), dtype=np.float32)
-    y_arr = np.empty(total_windows, dtype=np.float32)
-    cons_idx_arr  = np.empty(total_windows, dtype=np.int32)
-    win_start_arr = np.empty(total_windows, dtype=np.int32)
+    # For each consumer: take only the LAST window_size weeks
+    windows_kwh = weekly_raw[:, -window_size:]   # (N, 26)
+    labels_out  = labels                          # (N,)  — one label per consumer
+    cons_ids_out = cons_ids
 
-    idx = 0
-    for i in range(n_consumers):
-        for w in range(n_windows_per_consumer):
-            X_kwh[idx] = weekly[i, w : w + window_size]
-            X_gli[idx] = gli[w : w + window_size]
-            y_arr[idx] = labels[i]
-            cons_idx_arr[idx]  = i
-            win_start_arr[idx] = w
-            idx += 1
-
-    # ── Step 7 : stack into (N, 26, 2) ────────────────────────────────────────
-    X = np.stack([X_kwh, X_gli], axis=2)   # (N, 26, 2)
-
+    n_samples = len(windows_kwh)
     if verbose:
-        print(f"[SGCC] Final tensor : {X.shape}   "
-              f"theft prevalence = {y_arr.mean():.3%}")
+        print(f"[SGCC] [OK] Samples after one-window-per-consumer: "
+              f"{n_samples:,}  (expected ~40,000-42,000)")
+        if n_samples > 500_000:
+            raise RuntimeError(
+                f"STOP: {n_samples:,} samples produced — this is far too many. "
+                "A sliding window has been applied somewhere. "
+                "Fix the windowing logic before continuing."
+            )
+
+    # -- Step 7 : per-consumer min-max normalisation --------------------------
+    w_min = windows_kwh.min(axis=1, keepdims=True)
+    w_max = windows_kwh.max(axis=1, keepdims=True)
+    w_rng = np.where(w_max - w_min > 0, w_max - w_min, 1.0)
+    kWh_norm = (windows_kwh - w_min) / w_rng   # (N, 26) in [0, 1]
+    # Flat consumers (max == min) → all zeros (already handled by w_rng=1.0 above)
+
+    # -- Step 8 : compute Grid Load Index (GLI) --------------------------------
+    # GLI(t) = Σ_i C_i(t) / max_t [ Σ_i C_i(t) ]
+    # Treat all surviving consumers as one virtual substation.
+    # gli shape: (26,) — same value for every consumer at each timestep.
+    aggregate_load = kWh_norm.sum(axis=0)            # (26,)
+    gli_denom      = aggregate_load.max()
+    gli            = aggregate_load / (gli_denom if gli_denom > 0 else 1.0)
+    gli_matrix     = np.tile(gli, (n_samples, 1))    # (N, 26)
+
+    # -- Step 9 : stack into (N, 26, 2) ----------------------------------------
+    X = np.stack([kWh_norm, gli_matrix], axis=2)   # (N, 26, 2)
+    y = labels_out.astype(np.float32)
+
+    # -- Verification summary --------------------------------------------------
+    n_normal = int((y == 0).sum())
+    n_theft  = int((y == 1).sum())
+    prevalence = n_theft / len(y) * 100.0
+
+    print(f"\n{'='*55}")
+    print(f"  SGCC PREPROCESSING — VERIFICATION SUMMARY")
+    print(f"{'='*55}")
+    print(f"  Total samples (one per consumer) : {len(y):,}")
+    print(f"  Normal consumers (FLAG=0)        : {n_normal:,}")
+    print(f"  Theft  consumers (FLAG=1)        : {n_theft:,}")
+    print(f"  Theft prevalence                 : {prevalence:.2f}%")
+    print(f"  Tensor shape                     : {X.shape}")
+    print(f"{'='*55}\n")
+
+    if not (1.0 <= prevalence <= 25.0):
+        raise ValueError(
+            f"Theft prevalence = {prevalence:.2f}% is outside the expected "
+            f"1–25 % range. Data has likely been processed incorrectly. "
+            f"Expected ~5 % for SGCC. STOP and investigate before continuing."
+        )
 
     X_tensor = torch.FloatTensor(X)
-    y_tensor = torch.FloatTensor(y_arr)
+    y_tensor = torch.FloatTensor(y)
+
+    # Sort consumer IDs as temporal proxy for walk-forward (Experiment 2)
+    try:
+        sort_order = np.argsort(cons_ids_out.astype(np.int64))
+    except ValueError:
+        sort_order = np.argsort(cons_ids_out)
 
     metadata: Dict = {
-        "cons_ids":       cons_ids,          # (N_consumers,)  string IDs
-        "labels":         labels,             # (N_consumers,)  per-consumer label
-        "consumer_idx":   cons_idx_arr,       # (N,)  which consumer each window belongs to
-        "win_start_week": win_start_arr,      # (N,)  absolute week of window start
-        "n_consumers":    n_consumers,
-        "n_full_weeks":   n_full_weeks,
-        "n_win_per_cons": n_windows_per_consumer,
-        "window_size":    window_size,
-        "weekly":         weekly,             # (N_consumers, n_full_weeks) normalised weekly kWh
-        "gli":            gli,               # (n_full_weeks,)
+        "cons_ids":     cons_ids_out,      # (N,) string IDs — unsorted
+        "sort_order":   sort_order,        # (N,) sort indices by CONS_NO
+        "labels":       labels_out,        # (N,) per-consumer labels
+        "n_consumers":  n_samples,
+        "n_full_weeks": n_full_weeks,
+        "window_size":  window_size,
+        "n_normal":     n_normal,
+        "n_theft":      n_theft,
+        "prevalence_pct": prevalence,
     }
 
     return X_tensor, y_tensor, metadata
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Tabular Features for XGBoost Edge Filter
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def compute_tabular_features(X_np: np.ndarray) -> np.ndarray:
     """
@@ -248,7 +306,7 @@ def compute_tabular_features(X_np: np.ndarray) -> np.ndarray:
     --------
     0  variance of kWh over 26 weeks
     1  skewness of kWh over 26 weeks
-    2  peak-to-average ratio  (max / mean)
+    2  peak-to-average ratio  (max / mean kWh)
     3  mean GLI over 26 weeks
     4  std  GLI over 26 weeks
 
@@ -263,10 +321,10 @@ def compute_tabular_features(X_np: np.ndarray) -> np.ndarray:
     kwh = X_np[:, :, 0]   # (N, 26)
     gli = X_np[:, :, 1]   # (N, 26)
 
-    var_kwh = kwh.var(axis=1)
-    skw_kwh = np.apply_along_axis(scipy_skew, 1, kwh)
-    par_kwh = kwh.max(axis=1) / np.where(kwh.mean(axis=1) > 0,
-                                          kwh.mean(axis=1), 1e-8)
+    var_kwh  = kwh.var(axis=1)
+    skw_kwh  = np.apply_along_axis(scipy_skew, 1, kwh)
+    mean_kwh = np.where(kwh.mean(axis=1) > 0, kwh.mean(axis=1), 1e-8)
+    par_kwh  = kwh.max(axis=1) / mean_kwh
     mean_gli = gli.mean(axis=1)
     std_gli  = gli.std(axis=1)
 
@@ -275,37 +333,9 @@ def compute_tabular_features(X_np: np.ndarray) -> np.ndarray:
     ).astype(np.float32)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Temporal Train / Test Split (for Experiment 1 preprocessing check)
-# ─────────────────────────────────────────────────────────────────────────────
-
-def temporal_split(
-    X: torch.Tensor,
-    y: torch.Tensor,
-    metadata: Dict,
-    test_frac: float = 0.20,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """
-    Split windows by absolute start week (temporal order, no shuffling).
-    Used for the simple train/test split needed during preprocessing checks.
-
-    For Experiment 2 (walk-forward) a more elaborate split is applied in
-    training/train_walkforward.py.
-    """
-    win_start = metadata["win_start_week"]
-    n_weeks   = metadata["n_full_weeks"]
-    threshold = int(n_weeks * (1 - test_frac))
-
-    train_mask = win_start < threshold
-    test_mask  = win_start >= threshold
-
-    return (X[train_mask], y[train_mask],
-            X[test_mask],  y[test_mask])
-
-
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Convenience entry-point
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def run_sgcc_pipeline(
     data_dir: str,
@@ -335,23 +365,23 @@ def run_sgcc_pipeline(
     X, y, meta = preprocess_sgcc(df, verbose=verbose)
 
     if cache_path:
-        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+        os.makedirs(os.path.dirname(os.path.abspath(cache_path)), exist_ok=True)
         torch.save({"X": X, "y": y, "metadata": meta}, cache_path)
         if verbose:
-            print(f"[SGCC] Cached tensors → {cache_path}")
+            print(f"[SGCC] Cached tensors -> {cache_path}")
 
     return X, y, meta
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  CLI smoke-test
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import sys
     data_dir = sys.argv[1] if len(sys.argv) > 1 else "data/sgcc"
     X, y, meta = run_sgcc_pipeline(data_dir)
-    print(f"\n✓  X={X.shape}  y={y.shape}  theft={y.mean():.3%}")
+    print(f"\n[OK]  X={X.shape}  y={y.shape}  theft={y.mean():.3%}")
 
     feats = compute_tabular_features(X.numpy())
-    print(f"✓  Tabular features for XGBoost: {feats.shape}")
+    print(f"[OK]  Tabular features for XGBoost: {feats.shape}")

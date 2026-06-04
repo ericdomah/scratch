@@ -1,28 +1,29 @@
 """
-Experiment 2 -- SGCC Walk-Forward Temporal Validation (Protocol A -- Primary)
-============================================================================
-7 expanding-window rounds.  Each round trains from scratch on a growing
-prefix of the timeline and evaluates on the subsequent 14 % block.
+Experiment 2 -- SGCC Walk-Forward Temporal Validation (Primary Protocol)
+=========================================================================
+5 expanding-window rounds sorted by CONS_NO as a temporal proxy.
 
-Both GridGuardUniversalHybrid and BiGRU-BiLSTM baseline are run so that
-Cohen's d significance can be computed.
+SGCC does not provide registration dates, so CONS_NO order is used as
+the best available temporal proxy (lower ID = earlier registration).
 
-Round schedule
---------------
- Round  Train end  Test window
-   1       54 %    54 %?68 %
-   2       61 %    61 %?75 %
-   3       68 %    68 %?82 %
-   4       75 %    75 %?89 %
-   5       82 %    82 %?96 %
-   6       89 %    89 %?100 %  (?14 %)
-   7       93 %    93 %?100 %  (?7 %)  -- added to complete 7 rounds
+Round schedule (per thesis specification)
+-----------------------------------------
+  Round  Train end  Test window
+    1      60 %    → next 20 %
+    2      70 %    → next 10 %
+    3      80 %    → next 10 %
+    4      85 %    → next 10 %
+    5      90 %    → remaining 10 %
 
-Temporal ordering: windows sorted by absolute start week.
+If any test split has fewer than 30 theft samples it is merged
+with the next round.
+
+Both GridGuardUniversalHybrid and BiGRU-BiLSTM baseline are run so
+that Cohen's d significance can be computed across the 5 rounds.
 
 Outputs
 -------
-  results/exp2_walkforward.csv       -- per-round metrics for both models
+  results/exp2_walkforward.csv   -- per-round metrics for both models
 """
 
 from __future__ import annotations
@@ -53,7 +54,7 @@ from models.gridguard_model import (
 )
 
 # -----------------------------------------------------------------------------
-#  Constants  (same as train_sgcc.py)
+#  Constants  (same as train_sgcc.py — DO NOT CHANGE)
 # -----------------------------------------------------------------------------
 SEED         = 42
 BATCH_SIZE   = 2048
@@ -64,16 +65,21 @@ MAX_LR       = 2e-3
 GRAD_CLIP    = 1.0
 THRESHOLD    = 0.5270
 CHECKPOINT_EVERY = 5
+MIN_THEFT_PER_TEST = 30   # merge rounds with fewer theft samples
 
-# Walk-forward round boundaries (train_end %, test_end %)
-# Test window = [train_end, min(train_end + 0.14, 1.0)]
-ROUND_TRAIN_ENDS = [0.54, 0.61, 0.68, 0.75, 0.82, 0.89, 0.93]
-TEST_WINDOW_FRAC = 0.14
-WINDOW_SIZE      = 26   # must match thesis architecture (T=26 weekly timesteps)
+# Walk-forward round boundaries (train_end_frac, test_end_frac)
+# One consumer = one sample; fractions are over sorted consumers.
+ROUNDS = [
+    (0.00, 0.60, 0.80),   # Round 1: train [0, 60%), test [60%, 80%)
+    (0.00, 0.70, 0.80),   # Round 2: train [0, 70%), test [70%, 80%)
+    (0.00, 0.80, 0.90),   # Round 3: train [0, 80%), test [80%, 90%)
+    (0.00, 0.85, 0.95),   # Round 4: train [0, 85%), test [85%, 95%)
+    (0.00, 0.90, 1.00),   # Round 5: train [0, 90%), test [90%, 100%)
+]
 
 
 # -----------------------------------------------------------------------------
-#  Seed / Metrics (duplicated from train_sgcc for standalone usage)
+#  Seed / Metrics
 # -----------------------------------------------------------------------------
 
 def set_seed(seed: int = SEED):
@@ -161,19 +167,15 @@ def train_model_on_split(
     ckpt_dir: str,
 ) -> np.ndarray:
     """
-    Train a fresh model on (X_train, y_train) and return probabilities on
-    (X_test, y_test).
-
-    Parameters
-    ----------
-    model_type : 'gridguard' | 'bigru_bilstm'
+    Train a FRESH model on (X_train, y_train) and return probabilities on
+    (X_test, y_test). No weight sharing between rounds.
     """
     train_ds = TensorDataset(X_train, y_train)
     test_ds  = TensorDataset(X_test,  y_test)
     train_ld = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
-                          num_workers=2, pin_memory=(device == "cuda"))
+                          num_workers=0, pin_memory=(device == "cuda"))
     test_ld  = DataLoader(test_ds,  batch_size=BATCH_SIZE, shuffle=False,
-                          num_workers=2)
+                          num_workers=0)
 
     model     = build_model(model_type, device=device)
     criterion = AsymmetricFocalLoss()
@@ -191,7 +193,6 @@ def train_model_on_split(
         if epoch % 5 == 0 or epoch == EPOCHS:
             print(f"     [{model_type}] Round {round_id}  "
                   f"Epoch {epoch:2d}/{EPOCHS}  loss={loss:.4f}")
-        # Checkpoint
         if epoch % CHECKPOINT_EVERY == 0:
             ckpt_path = os.path.join(
                 ckpt_dir,
@@ -207,37 +208,49 @@ def train_model_on_split(
 # -----------------------------------------------------------------------------
 
 def build_wf_splits(
-    win_start: np.ndarray,
-    n_full_weeks: int,
+    n: int,
+    y: np.ndarray,
 ) -> List[Tuple[np.ndarray, np.ndarray]]:
     """
-    Build 7 (train_mask, test_mask) index pairs using absolute start-week
-    ordering.
+    Build up to 5 (train_indices, test_indices) pairs sorted by CONS_NO order.
+
+    Consumers are already sorted by CONS_NO (sort_order applied upstream).
+    Fractions refer to position in the sorted consumer list.
+
+    Rounds with fewer than MIN_THEFT_PER_TEST theft samples in the test set
+    are skipped (merged with the next round implicitly by the larger train set
+    in subsequent rounds).
 
     Parameters
     ----------
-    win_start    : (N,) array of window start weeks for each sample
-    n_full_weeks : total weeks in the timeline (? 147 for SGCC)
+    n : total number of consumers (samples)
+    y : (n,) binary labels in CONS_NO sorted order
 
     Returns
     -------
     splits : list of (train_indices, test_indices)
     """
     splits = []
-    for train_end_frac in ROUND_TRAIN_ENDS:
-        train_end = int(n_full_weeks * train_end_frac)
-        test_end  = min(int(n_full_weeks * (train_end_frac + TEST_WINDOW_FRAC)),
-                        n_full_weeks)
+    for _, train_end_frac, test_end_frac in ROUNDS:
+        train_end = int(n * train_end_frac)
+        test_end  = min(int(n * test_end_frac), n)
 
-        tr_mask = win_start <  train_end
-        te_mask = (win_start >= train_end) & (win_start < test_end)
+        tr_idx = np.arange(0, train_end)
+        te_idx = np.arange(train_end, test_end)
 
-        if tr_mask.sum() == 0 or te_mask.sum() == 0:
-            print(f"  [WF] Skipping split: train_end={train_end_frac:.0%} -- "
-                  f"empty split (train={tr_mask.sum()}, test={te_mask.sum()})")
+        if len(tr_idx) == 0 or len(te_idx) == 0:
+            print(f"  [WF] Skipping empty split: "
+                  f"train_end={train_end_frac:.0%}, test_end={test_end_frac:.0%}")
             continue
 
-        splits.append((np.where(tr_mask)[0], np.where(te_mask)[0]))
+        n_theft_test = y[te_idx].sum()
+        if n_theft_test < MIN_THEFT_PER_TEST:
+            print(f"  [WF] Skipping split (train={train_end_frac:.0%}, "
+                  f"test={test_end_frac:.0%}): only {n_theft_test:.0f} theft "
+                  f"samples in test — below minimum {MIN_THEFT_PER_TEST}")
+            continue
+
+        splits.append((tr_idx, te_idx))
 
     return splits
 
@@ -254,15 +267,17 @@ def run_walk_forward(
     verbose: bool = True,
 ) -> pd.DataFrame:
     """
-    Run 7-round expanding-window walk-forward validation for both
+    Run 5-round expanding-window walk-forward validation for both
     GridGuardUniversalHybrid and BiGRU-BiLSTM baseline.
+
+    Consumers are sorted by CONS_NO (sort_order from metadata) as a
+    temporal ordering proxy before splitting.
 
     Parameters
     ----------
     X          : (N, 26, 2) FloatTensor
     y          : (N,)       FloatTensor
-    metadata   : dict from sgcc_pipeline (must contain 'win_start_week' and
-                 'n_full_weeks')
+    metadata   : dict from sgcc_pipeline (must contain 'sort_order')
     output_dir : project root
 
     Returns
@@ -280,104 +295,88 @@ def run_walk_forward(
     os.makedirs(result_dir, exist_ok=True)
     os.makedirs(ckpt_dir,   exist_ok=True)
 
-    win_start    = metadata["win_start_week"]    # (N,) np array
-    n_full_weeks = metadata["n_full_weeks"]
+    # -- Sort consumers by CONS_NO as temporal proxy --------------------------
+    sort_order = metadata["sort_order"]          # (N,) indices
+    X_sorted   = X[sort_order]
+    y_sorted   = y[sort_order]
+    y_np       = y_sorted.numpy().astype(int)
+    n          = len(y_np)
 
-    splits = build_wf_splits(win_start, n_full_weeks)
-    print(f"  Walk-forward rounds: {len(splits)}")
+    print(f"  Total samples (one per consumer): {n:,}")
+    print(f"  Sorted by CONS_NO as temporal proxy.")
 
-    # -- Guard: no valid splits (dataset too short) ----------------------------
+    splits = build_wf_splits(n, y_np)
+    print(f"  Valid walk-forward rounds: {len(splits)}")
+
     if len(splits) == 0:
-        min_weeks_needed = int(n_full_weeks / ROUND_TRAIN_ENDS[0]) + WINDOW_SIZE
-        print(f"  [WF] No valid walk-forward splits could be formed.")
-        print(f"  Dataset has {n_full_weeks} weeks, window_size={WINDOW_SIZE}.")
-        print(f"  win_start_week range: {win_start.min()} to {win_start.max()}")
-        print(f"  The 54% cutoff falls at week {int(n_full_weeks * 0.54)}, but")
-        print(f"  all windows start before that -- no samples remain for testing.")
-        print(f"  Root cause: likely using synthetic stub data (120 rows, 52 weeks)")
-        print(f"  instead of real SGCC (~42k rows, ~147 weeks).")
-        print(f"  Fix: upload the real SGCC data.csv to data/sgcc/ and delete")
-        print(f"  data/sgcc/sgcc_processed.pt, then re-run.")
+        print("  [WF] No valid splits — check that SGCC data is loaded correctly.")
         empty_df = pd.DataFrame(columns=[
             "Round", "Train_samples", "Test_samples", "Theft_frac_test",
             "GG_F1", "GG_AUROC", "GG_Precision", "GG_Recall", "GG_Brier",
             "Base_F1", "Base_AUROC", "Base_Precision", "Base_Recall",
         ])
-        csv_path = os.path.join(result_dir, "exp2_walkforward.csv")
-        empty_df.to_csv(csv_path, index=False)
-        print(f"  Empty results saved to {csv_path}")
-        print(f"{'='*60}\n")
+        empty_df.to_csv(os.path.join(result_dir, "exp2_walkforward.csv"), index=False)
         return empty_df
 
-    y_np = y.numpy().astype(int)
-    rows = []
-
-    gg_f1s   = []   # GridGuard F1 per round
-    base_f1s = []   # Baseline F1 per round
+    rows     = []
+    gg_f1s   = []
+    base_f1s = []
 
     for rnd, (tr_idx, te_idx) in enumerate(splits, 1):
         print(f"\n-- Round {rnd}/{len(splits)} ----------------------------")
-        print(f"   Train: {len(tr_idx):,} samples  |  "
-              f"Test: {len(te_idx):,} samples  |  "
+        print(f"   Train: {len(tr_idx):,} consumers  |  "
+              f"Test: {len(te_idx):,} consumers  |  "
               f"Theft (train): {y_np[tr_idx].mean():.3%}  |  "
               f"Theft (test): {y_np[te_idx].mean():.3%}")
 
-        X_tr = X[tr_idx];  y_tr = y[tr_idx]
-        X_te = X[te_idx];  y_te = y[te_idx]
+        X_tr = X_sorted[tr_idx];  y_tr = y_sorted[tr_idx]
+        X_te = X_sorted[te_idx];  y_te = y_sorted[te_idx]
         y_te_np = y_np[te_idx]
 
         # -- GridGuardUniversalHybrid ------------------------------------------
         set_seed(SEED + rnd)
-        print(f"  Training GridGuardUniversalHybrid...")
+        print(f"  Training GridGuardUniversalHybrid (from scratch)...")
         p_gg = train_model_on_split(
             "gridguard", X_tr, y_tr, X_te, y_te, device, rnd, ckpt_dir
         )
         m_gg = compute_metrics(y_te_np, p_gg, prefix="GG_")
         gg_f1s.append(m_gg["GG_F1"])
 
-        # -- BiGRU-BiLSTM Baseline ---------------------------------------------
+        # -- BiGRU-BiLSTM Baseline (from scratch) ------------------------------
         set_seed(SEED + rnd + 100)
-        print(f"  Training BiGRU-BiLSTM Baseline...")
+        print(f"  Training BiGRU-BiLSTM Baseline (from scratch)...")
         p_base = train_model_on_split(
             "bigru_bilstm", X_tr, y_tr, X_te, y_te, device, rnd, ckpt_dir
         )
         m_base = compute_metrics(y_te_np, p_base, prefix="Base_")
         base_f1s.append(m_base["Base_F1"])
 
+        gg_wins = m_gg["GG_F1"] > m_base["Base_F1"]
+        print(f"  GG   F1={m_gg['GG_F1']:.4f}  AUROC={m_gg['GG_AUROC']:.4f}  "
+              f"Prec={m_gg['GG_Precision']:.4f}  Rec={m_gg['GG_Recall']:.4f}")
+        print(f"  Base F1={m_base['Base_F1']:.4f}  AUROC={m_base['Base_AUROC']:.4f}  "
+              f"Prec={m_base['Base_Precision']:.4f}  Rec={m_base['Base_Recall']:.4f}")
+        print(f"  GridGuard {'OUTPERFORMS' if gg_wins else 'does NOT outperform'} "
+              f"BiGRU-BiLSTM baseline in Round {rnd}")
+
         row = {
-            "Round":          rnd,
-            "Train_samples":  len(tr_idx),
-            "Test_samples":   len(te_idx),
+            "Round":           rnd,
+            "Train_samples":   len(tr_idx),
+            "Test_samples":    len(te_idx),
             "Theft_frac_test": round(float(y_te_np.mean()), 4),
             **m_gg,
             **m_base,
         }
         rows.append(row)
 
-        print(f"  GG   F1={m_gg['GG_F1']:.4f}  "
-              f"AUROC={m_gg['GG_AUROC']:.4f}  "
-              f"Prec={m_gg['GG_Precision']:.4f}  "
-              f"Rec={m_gg['GG_Recall']:.4f}")
-        print(f"  Base F1={m_base['Base_F1']:.4f}  "
-              f"AUROC={m_base['Base_AUROC']:.4f}  "
-              f"Prec={m_base['Base_Precision']:.4f}  "
-              f"Rec={m_base['Base_Recall']:.4f}")
-
     # -- Summary ---------------------------------------------------------------
     results_df = pd.DataFrame(rows)
 
-    if results_df.empty:
-        csv_path = os.path.join(result_dir, "exp2_walkforward.csv")
-        results_df.to_csv(csv_path, index=False)
-        print(f"  No rounds completed.  Results -> {csv_path}")
-        print(f"{'='*60}\n")
-        return results_df
-
     gg_f1s   = np.array(gg_f1s)
     base_f1s = np.array(base_f1s)
+    d        = cohens_d(gg_f1s, base_f1s)
 
-    d = cohens_d(gg_f1s, base_f1s)
-
+    print(f"\n{'='*60}")
     for metric in ["GG_F1", "GG_AUROC", "GG_Precision", "GG_Recall",
                    "Base_F1", "Base_AUROC"]:
         vals = results_df[metric].values.astype(float)
@@ -387,6 +386,7 @@ def run_walk_forward(
         print(f"  {metric}: {mu:.4f} +/- {sd:.4f}  [95%CI +/-{ci:.4f}]")
 
     print(f"\n  Cohen's d (GridGuard vs Baseline, F1): {d:.4f}")
+    print(f"  (|d|>0.8 = large, 0.5–0.8 = medium, 0.2–0.5 = small)")
 
     summary_row = {
         "Round":    "mean +/- SD",

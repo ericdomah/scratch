@@ -1,8 +1,13 @@
 """
 Experiment 1 -- SGCC Standard Cross-Validation Training (Protocol A*)
 =====================================================================
-10-fold StratifiedKFold on all SGCC windows.
+5-fold StratifiedKFold on all SGCC windows (ONE window per consumer).
 Also retrains the XGBoost edge filter on SGCC tabular features.
+
+Rationale for 5-fold (not 10):
+  ~42,000 samples × ~5% theft = ~2,100 theft total.
+  5-fold → ~420 theft per test fold (stable metrics).
+  10-fold → ~210 per fold (too few for reliable AUROC).
 
 Outputs
 -------
@@ -56,7 +61,7 @@ WEIGHT_DECAY  = 1e-4
 MAX_LR        = 2e-3
 GRAD_CLIP     = 1.0
 THRESHOLD     = 0.5270
-N_FOLDS       = 10
+N_FOLDS       = 5   # 5-fold per thesis spec (not 10)
 CHECKPOINT_EVERY = 5   # save intermediate checkpoint every N epochs
 
 XGB_PARAMS = dict(
@@ -232,7 +237,7 @@ def run_standard_cv(
     verbose: bool = True,
 ) -> pd.DataFrame:
     """
-    Run 10-fold StratifiedKFold CV and return per-fold metric DataFrame.
+    Run 5-fold StratifiedKFold CV and return per-fold metric DataFrame.
 
     Best fold (by fusion F1) model is saved to output_dir/models/.
 
@@ -251,7 +256,7 @@ def run_standard_cv(
     set_seed(SEED)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"\n{'='*60}")
-    print(f"  EXPERIMENT 1 -- Standard {n_folds}-Fold CV   device={device}")
+    print(f"  EXPERIMENT 1 -- Standard {n_folds}-Fold StratifiedKFold   device={device}")
     print(f"{'='*60}")
 
     model_dir  = os.path.join(output_dir, "models")
@@ -295,9 +300,9 @@ def run_standard_cv(
         train_ds = TensorDataset(X_tr, y_tr)
         val_ds   = TensorDataset(X_va, y_va)
         train_ld = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
-                              num_workers=2, pin_memory=(device == "cuda"))
+                              num_workers=0, pin_memory=(device == "cuda"))
         val_ld   = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False,
-                              num_workers=2)
+                              num_workers=0)
 
         # Fresh model each fold
         set_seed(SEED + fold)
