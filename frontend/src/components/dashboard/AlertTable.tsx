@@ -8,18 +8,18 @@ import { useGridStore } from '../../store/gridStore';
 
 export default function AlertTable() {
   const [searchTerm, setSearchTerm] = useState('');
-  const { liveAlerts, addLiveAlert, incrementInvestigations, triggerInspect } = useGridStore();
+  const { liveAlerts, addLiveAlert, incrementInvestigations, triggerInspect, config } = useGridStore();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8000/ws/telemetry');
+    const ws = new WebSocket(`${config.wsUrl}?model_type=${config.modelType}`);
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       data.timestamp = new Date().toISOString();
       addLiveAlert(data);
     };
     return () => ws.close();
-  }, [addLiveAlert]);
+  }, [addLiveAlert, config.wsUrl, config.modelType]);
 
   const handleInspect = (meterId: string) => {
     triggerInspect(meterId);

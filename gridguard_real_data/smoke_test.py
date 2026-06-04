@@ -1,5 +1,5 @@
 """
-smoke_test.py — Validates the full GridGuard Phase 1 pipeline without real data.
+smoke_test.py -- Validates the full GridGuard Phase 1 pipeline without real data.
 Creates synthetic SGCC-shaped and TDD2022-shaped CSVs, runs preprocessing,
 runs 2-fold CV (abbreviated), runs 2-round walk-forward, runs cross-domain eval.
 All on CPU, ~2 min runtime.
@@ -17,11 +17,11 @@ SEED = 42
 random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
 
 print("="*60)
-print("  GridGuard Phase 1 — Smoke Test (synthetic mini-data)")
+print("  GridGuard Phase 1 -- Smoke Test (synthetic mini-data)")
 print("="*60)
 
-# ── 1. Synthetic SGCC CSV ────────────────────────────────────────────────────
-print("\n[1/7] Building synthetic SGCC CSV …")
+# -- 1. Synthetic SGCC CSV ----------------------------------------------------
+print("\n[1/7] Building synthetic SGCC CSV ...")
 N_CONS   = 120          # consumers (real: ~42k)
 N_DAYS   = 7 * 52      # 52 weeks = 364 days (real: ~1035)
 np.random.seed(SEED)
@@ -42,10 +42,10 @@ sgcc_dir = os.path.join(ROOT, "data", "sgcc")
 os.makedirs(sgcc_dir, exist_ok=True)
 sgcc_csv = os.path.join(sgcc_dir, "data.csv")
 df_sgcc.to_csv(sgcc_csv, index=False)
-print(f"   Synthetic SGCC: {df_sgcc.shape} → {sgcc_csv}")
+print(f"   Synthetic SGCC: {df_sgcc.shape} -> {sgcc_csv}")
 
-# ── 2. Synthetic TDD2022 CSV (wide format) ────────────────────────────────────
-print("\n[2/7] Building synthetic TDD2022 CSV …")
+# -- 2. Synthetic TDD2022 CSV (wide format) ------------------------------------
+print("\n[2/7] Building synthetic TDD2022 CSV ...")
 N_CONS_TDD   = 40
 N_HOURS_TDD  = 24 * 7 * 30   # 30 weeks of hourly data
 data_tdd = np.random.rand(N_HOURS_TDD, N_CONS_TDD) * 5
@@ -62,10 +62,10 @@ tdd_dir = os.path.join(ROOT, "data", "tdd2022")
 os.makedirs(tdd_dir, exist_ok=True)
 tdd_csv = os.path.join(tdd_dir, "tdd2022_data.csv")
 df_tdd.to_csv(tdd_csv, index=False)
-print(f"   Synthetic TDD2022: {df_tdd.shape} → {tdd_csv}")
+print(f"   Synthetic TDD2022: {df_tdd.shape} -> {tdd_csv}")
 
-# ── 3. SGCC preprocessing ─────────────────────────────────────────────────────
-print("\n[3/7] Running SGCC preprocessing …")
+# -- 3. SGCC preprocessing -----------------------------------------------------
+print("\n[3/7] Running SGCC preprocessing ...")
 from preprocessing.sgcc_pipeline import run_sgcc_pipeline, compute_tabular_features
 
 sgcc_cache = os.path.join(sgcc_dir, "sgcc_processed.pt")
@@ -79,10 +79,10 @@ print(f"   y_sgcc  : {y_sgcc.shape}   theft={y_sgcc.mean():.3%}")
 print(f"   features: {feats.shape}")
 assert X_sgcc.shape[1] == 26, f"Expected T=26, got {X_sgcc.shape[1]}"
 assert X_sgcc.shape[2] == 2,  f"Expected C=2, got {X_sgcc.shape[2]}"
-print("   ✓ shape assertions passed")
+print("   [OK] shape assertions passed")
 
-# ── 4. TDD2022 preprocessing ──────────────────────────────────────────────────
-print("\n[4/7] Running TDD2022 preprocessing …")
+# -- 4. TDD2022 preprocessing --------------------------------------------------
+print("\n[4/7] Running TDD2022 preprocessing ...")
 from preprocessing.tdd2022_pipeline import run_tdd2022_pipeline
 
 tdd_cache = os.path.join(tdd_dir, "tdd2022_processed.pt")
@@ -94,10 +94,10 @@ print(f"   X_tdd   : {X_tdd.shape}   dtype={X_tdd.dtype}")
 print(f"   y_tdd   : {y_tdd.shape}   theft={y_tdd.mean():.3%}")
 assert X_tdd.shape[1] == 26, f"Expected T=26, got {X_tdd.shape[1]}"
 assert X_tdd.shape[2] == 2,  f"Expected C=2, got {X_tdd.shape[2]}"
-print("   ✓ shape assertions passed")
+print("   [OK] shape assertions passed")
 
-# ── 5. Model forward pass ─────────────────────────────────────────────────────
-print("\n[5/7] Model forward pass …")
+# -- 5. Model forward pass -----------------------------------------------------
+print("\n[5/7] Model forward pass ...")
 from models.gridguard_model import (
     GridGuardUniversalHybrid, BiGRUBiLSTMBaseline,
     AsymmetricFocalLoss, build_model
@@ -112,17 +112,17 @@ for name, m in [("GridGuard", GridGuardUniversalHybrid()),
     x = torch.randn(8, 26, 2).to(device)
     out = m(x)
     assert out.shape == (8, 1), f"{name} bad output shape: {out.shape}"
-    print(f"   ✓ {name}: input (8,26,2) → output {tuple(out.shape)}")
+    print(f"   [OK] {name}: input (8,26,2) -> output {tuple(out.shape)}")
 
 loss_fn = AsymmetricFocalLoss()
 preds   = torch.sigmoid(torch.randn(8, 1))
 targets = torch.randint(0, 2, (8,)).float()
 loss    = loss_fn(preds, targets)
 assert loss.item() > 0
-print(f"   ✓ AsymmetricFocalLoss: {loss.item():.4f}")
+print(f"   [OK] AsymmetricFocalLoss: {loss.item():.4f}")
 
-# ── 6. Abbreviated Standard CV (2 folds, 2 epochs) ───────────────────────────
-print("\n[6/7] Abbreviated 2-fold CV (2 epochs each) …")
+# -- 6. Abbreviated Standard CV (2 folds, 2 epochs) ---------------------------
+print("\n[6/7] Abbreviated 2-fold CV (2 epochs each) ...")
 import importlib, types
 
 # Monkey-patch constants for speed
@@ -144,15 +144,15 @@ print(f"   Exp1 result rows: {len(exp1_df)}")
 assert os.path.isfile(os.path.join(results_dir, "exp1_standard_cv.csv"))
 assert os.path.isfile(os.path.join(models_dir,  "gridguard_sgcc_best.pth"))
 assert os.path.isfile(os.path.join(models_dir,  "xgboost_sgcc_edge.pkl"))
-print("   ✓ exp1_standard_cv.csv, gridguard_sgcc_best.pth, xgboost_sgcc_edge.pkl saved")
+print("   [OK] exp1_standard_cv.csv, gridguard_sgcc_best.pth, xgboost_sgcc_edge.pkl saved")
 
 # Restore
 tsgcc.EPOCHS          = _orig_epochs
 tsgcc.N_FOLDS         = _orig_n_folds
 tsgcc.CHECKPOINT_EVERY = _orig_ckpt_ev
 
-# ── 7. Abbreviated Walk-Forward (2 rounds, 2 epochs) ─────────────────────────
-print("\n[7/7] Abbreviated 2-round walk-forward (2 epochs each) …")
+# -- 7. Abbreviated Walk-Forward (2 rounds, 2 epochs) -------------------------
+print("\n[7/7] Abbreviated 2-round walk-forward (2 epochs each) ...")
 import training.train_walkforward as twf
 _wf_orig_epochs = twf.EPOCHS
 _wf_orig_ckpt   = twf.CHECKPOINT_EVERY
@@ -163,13 +163,13 @@ twf.ROUND_TRAIN_ENDS = [0.54, 0.68]   # just 2 rounds for smoke test
 exp2_df = twf.run_walk_forward(X_sgcc, y_sgcc, meta, output_dir=ROOT)
 print(f"   Exp2 result rows: {len(exp2_df)}")
 assert os.path.isfile(os.path.join(results_dir, "exp2_walkforward.csv"))
-print("   ✓ exp2_walkforward.csv saved")
+print("   [OK] exp2_walkforward.csv saved")
 
 twf.EPOCHS          = _wf_orig_epochs
 twf.CHECKPOINT_EVERY = _wf_orig_ckpt
 
-# ── Cross-domain eval with synthetic TDD2022 ─────────────────────────────────
-print("\n[+] Cross-domain eval (TDD2022, zero-shot) …")
+# -- Cross-domain eval with synthetic TDD2022 ---------------------------------
+print("\n[+] Cross-domain eval (TDD2022, zero-shot) ...")
 from evaluation.evaluate_cross_domain import run_exp4_cross_domain_tdd
 
 exp4_df = run_exp4_cross_domain_tdd(
@@ -181,10 +181,10 @@ exp4_df = run_exp4_cross_domain_tdd(
     sgcc_auroc=0.95,
 )
 if exp4_df is not None:
-    print(f"   ✓ Exp4 done: F1={exp4_df.iloc[0]['F1']:.4f}")
+    print(f"   [OK] Exp4 done: F1={exp4_df.iloc[0]['F1']:.4f}")
 
-# ── Summary ───────────────────────────────────────────────────────────────────
+# -- Summary -------------------------------------------------------------------
 print("\n" + "="*60)
-print("  SMOKE TEST PASSED ✓  All pipeline stages ran successfully.")
+print("  SMOKE TEST PASSED [OK]  All pipeline stages ran successfully.")
 print("  Ready to run with real SGCC + TDD2022 data on GPU.")
 print("="*60)

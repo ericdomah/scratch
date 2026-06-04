@@ -8,12 +8,22 @@ from xgboost_model import XGBoostBaseline
 from preprocessing import DataPreprocessor
 
 # Configure pathing
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "gridguard")))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "gridguard", "backend")))
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.append(ROOT_DIR)
+sys.path.append(os.path.join(ROOT_DIR, "gridguard"))
+sys.path.append(os.path.join(ROOT_DIR, "gridguard", "backend"))
+sys.path.append(os.path.join(ROOT_DIR, "gridguard_real_data"))
+
+try:
+    from preprocessing.sgcc_pipeline import compute_tabular_features
+except ImportError:
+    pass
 
 # Load config
-CONFIG_PATH = "c:/Users/User/Downloads/scratch-main/gridguard/config.yaml"
+CONFIG_PATH = os.path.join(ROOT_DIR, "gridguard", "config.yaml")
+if not os.path.exists(CONFIG_PATH):
+    CONFIG_PATH = "c:/Users/User/Downloads/scratch-main/gridguard/config.yaml"
+    
 with open(CONFIG_PATH, "r") as f:
     config = yaml.safe_load(f)
 
@@ -27,58 +37,83 @@ except ImportError:
         from gli_manager import GLIManager, PredictionRequest
 
 class InferenceEngine:
-    def __init__(self, dl_model_path='best_model_balanced.pth', xgb_model_path='best_xgb_augmented.pkl', device='cpu'):
+    def __init__(self, 
+                 syn_dl_path='best_model_balanced.pth', 
+                 syn_xgb_path='best_xgb_augmented.pkl',
+                 real_dl_path='../../gridguard_real_data/models/gridguard_sgcc_best.pth',
+                 real_xgb_path='../../gridguard_real_data/models/xgboost_sgcc_edge.pkl',
+                 device='cpu'):
         self.device = device
         self.preprocessor = DataPreprocessor()
         self.gli_manager = GLIManager()
         
-        # 1. Initialize Universal Hybrid (DL) with input_dim=2 and window_size=26
         input_dim = config["model"]["input_dim"] # 2
         window_size = config["model"]["seq_len"] # 26
         hidden_dim = config["model"]["hidden_dim"] # 64
         
-        self.model = GridGuardUniversalHybrid(window_size=window_size, input_dim=input_dim, hidden_dim=hidden_dim)
-        if os.path.exists(dl_model_path):
+        # 1. Initialize Universal Hybrid (DL) models
+        self.model_syn = GridGuardUniversalHybrid(window_size=window_size, input_dim=input_dim, hidden_dim=hidden_dim).to(device)
+        self.model_real = GridGuardUniversalHybrid(window_size=window_size, input_dim=input_dim, hidden_dim=hidden_dim).to(device)
+        
+        # Load Synthetic DL
+        if os.path.exists(syn_dl_path):
             try:
-                self.model.load_state_dict(torch.load(dl_model_path, map_location=device))
-                print(f"[OK] Universal Hybrid Model loaded from {dl_model_path}")
+                self.model_syn.load_state_dict(torch.load(syn_dl_path, map_location=device))
+                print(f"[OK] Synthetic DL Model loaded from {syn_dl_path}")
             except Exception as e:
-                print(f"[WARN] Failed to load weights for DL model: {e}")
-        else:
-            print(f"[WARN] {dl_model_path} not found. Running with uninitialized hybrid weights.")
-            
-        self.model.to(device)
-        self.model.eval()
+                print(f"[WARN] Failed to load Synthetic DL model: {e}")
+        self.model_syn.eval()
+
+        # Load Real-World DL
+        if os.path.exists(real_dl_path):
+            try:
+                self.model_real.load_state_dict(torch.load(real_dl_path, map_location=device))
+                print(f"[OK] Real-World DL Model loaded from {real_dl_path}")
+            except Exception as e:
+                print(f"[WARN] Failed to load Real-World DL model: {e}")
+        self.model_real.eval()
 
         # 2. Initialize XGBoost (Baseline Hybrid Component)
-        self.xgb_model = XGBoostBaseline()
-        self.has_xgb = False
-        if os.path.exists(xgb_model_path):
+        self.xgb_syn = XGBoostBaseline()
+        self.xgb_real = XGBoostBaseline()
+        self.has_xgb_syn = False
+        self.has_xgb_real = False
+        
+        if os.path.exists(syn_xgb_path):
             try:
-                self.xgb_model.load_model(xgb_model_path)
-                self.has_xgb = True
-                print(f"[OK] XGBoost Baseline loaded from {xgb_model_path}")
+                self.xgb_syn.load_model(syn_xgb_path)
+                self.has_xgb_syn = True
+                print(f"[OK] Synthetic XGBoost loaded from {syn_xgb_path}")
             except Exception as e:
-                print(f"[WARN] Failed to load XGBoost model: {e}")
+                print(f"[WARN] Failed to load Synthetic XGBoost model: {e}")
+                
+        if os.path.exists(real_xgb_path):
+            try:
+                self.xgb_real.load_model(real_xgb_path)
+                self.has_xgb_real = True
+                print(f"[OK] Real-World XGBoost loaded from {real_xgb_path}")
+            except Exception as e:
+                print(f"[WARN] Failed to load Real-World XGBoost model: {e}")
 
-    def predict(self, raw_consumption, meter_id="MTR_UNKNOWN", live_gli=None, live_gli_timestamp=None, hour_of_day=12, day_of_week=0):
+    def predict(self, raw_consumption, meter_id="MTR_UNKNOWN", live_gli=None, live_gli_timestamp=None, hour_of_day=12, day_of_week=0, model_type="real_world"):
         """
-        Calculates a context-aware hybrid probability across all model architectures.
-        Incorporates 4-tier GLI Fallback logic and strict 26-timestep sequence length.
+        Calculates a context-aware hybrid probability across selected model architecture.
         """
+        # Select active models
+        dl_model = self.model_syn if model_type == "synthetic" else self.model_real
+        xgb_model = self.xgb_syn if model_type == "synthetic" else self.xgb_real
+        has_xgb = self.has_xgb_syn if model_type == "synthetic" else self.has_xgb_real
+        
         # Preprocess consumption data
         processed_consumption = self.preprocessor.process_user_data(raw_consumption)
         
-        # Enforce strict 26-week sequence length (Fix 3: Sequence Window Contradiction)
+        # Enforce strict 26-week sequence length
         if len(processed_consumption) < 26:
-            # Pad beginning with edge values
             pad_len = 26 - len(processed_consumption)
             processed_consumption = np.pad(processed_consumption, (pad_len, 0), mode='edge')
         elif len(processed_consumption) > 26:
-            # Slice to most recent 26 timesteps
             processed_consumption = processed_consumption[-26:]
             
-        # Retrieve the context-aware GLI value and degradation status from GLIManager
         req = PredictionRequest(
             meter_id=meter_id,
             kwh_sequence=processed_consumption.tolist(),
@@ -89,35 +124,41 @@ class InferenceEngine:
         )
         gli_val, gli_status = self.gli_manager.process_gli(req)
         
-        # Synthesize GLI sequence with correct phase-alignment to summer cooling peaks
         trnc_mode = config.get("data", {}).get("trnc_mode", True)
         if trnc_mode:
             gli_base = 0.5 + 0.12 * np.sin(np.linspace(np.pi, 5 * np.pi, 26))
         else:
             gli_base = 0.5 + 0.12 * np.sin(np.linspace(0, 4 * np.pi, 26))
             
-        # Shift baseline GLI curve such that the final timestep aligns with the live/estimated GLI value
         shift = gli_val - gli_base[-1]
         gli_seq = np.clip(gli_base + shift, 0.0, 1.0)
         
-        # Stack to form a (26, 2) multi-channel tensor [Feature 0: kWh, Feature 1: GLI]
         seq_2d = np.stack([processed_consumption, gli_seq], axis=1) # (26, 2)
         
-        # DL Inference (Universal Hybrid)
+        # DL Inference
         input_tensor = torch.tensor(seq_2d, dtype=torch.float32).unsqueeze(0).to(self.device) # (1, 26, 2)
         with torch.no_grad():
-            dl_logits = self.model(input_tensor)
+            dl_logits = dl_model(input_tensor)
             dl_prob = torch.sigmoid(dl_logits).item()
             
         # ML Inference (XGBoost)
         xgb_prob = 0.5 # Default if not loaded
-        if self.has_xgb:
-            xgb_prob = self.xgb_model.predict_proba(input_tensor.cpu().numpy())[0]
+        if has_xgb:
+            if model_type == "real_world":
+                # Real-world model requires tabular extraction
+                feats = compute_tabular_features(input_tensor.cpu().numpy())
+                # xgb_model.model is raw sklearn wrapper since we loaded dict payload
+                # we just use predict_proba directly on the raw model
+                if hasattr(xgb_model, 'model'):
+                    p = xgb_model.model.predict_proba(feats)
+                    xgb_prob = p[0, 1] if p.shape[1] > 1 else p[0, 0]
+            else:
+                # Synthetic model expects flattened tensor
+                xgb_prob = xgb_model.predict_proba(input_tensor.cpu().numpy())[0]
             
         # Hybrid Fusion (Weighted average: 70% Deep Learning, 30% XGBoost)
         hybrid_prob = (0.7 * dl_prob) + (0.3 * xgb_prob)
             
-        # Use the optimal Meta-Ensemble threshold found in the SOTA comparative study
         prediction = 1 if hybrid_prob > 0.5270 else 0
         
         return {
@@ -133,8 +174,7 @@ class InferenceEngine:
         }
 
 if __name__ == "__main__":
-    # Test Ensemble Inference
     engine = InferenceEngine()
     sample_data = np.random.rand(30) * 10
-    result = engine.predict(sample_data, meter_id="MTR_TEST_CLI")
-    print(f"Hybrid Ensemble Result: {result}")
+    result = engine.predict(sample_data, meter_id="MTR_TEST_CLI", model_type="real_world")
+    print(f"Hybrid Ensemble Result (Real World): {result}")

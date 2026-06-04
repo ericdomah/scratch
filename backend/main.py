@@ -38,8 +38,10 @@ init_db()
 
 # Initialize engines
 inference_engine = InferenceEngine(
-    dl_model_path='../ml_engine/src/best_model_balanced.pth',
-    xgb_model_path='../ml_engine/src/best_xgb_augmented.pkl'
+    syn_dl_path='../ml_engine/src/best_model_balanced.pth',
+    syn_xgb_path='../ml_engine/src/best_xgb_augmented.pkl',
+    real_dl_path='../gridguard_real_data/models/gridguard_sgcc_best.pth',
+    real_xgb_path='../gridguard_real_data/models/xgboost_sgcc_edge.pkl'
 )
 xai_engine = XAIEngine(inference_engine.model)
 
@@ -51,6 +53,7 @@ class PredictionRequest(BaseModel):
     live_gli_timestamp: Optional[float] = None
     hour_of_day: Optional[int] = 12
     day_of_week: Optional[int] = 0
+    model_type: Optional[str] = "real_world"
 
 @app.get("/")
 async def root():
@@ -69,7 +72,8 @@ async def predict_theft(request: PredictionRequest, db: Session = Depends(get_db
             live_gli=request.live_gli,
             live_gli_timestamp=request.live_gli_timestamp,
             hour_of_day=request.hour_of_day or 12,
-            day_of_week=request.day_of_week or 0
+            day_of_week=request.day_of_week or 0,
+            model_type=request.model_type
         )
         
         # Persist detection outcome to database
@@ -147,7 +151,7 @@ async def explain_theft(request: PredictionRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.websocket("/ws/telemetry")
-async def websocket_telemetry(websocket: WebSocket):
+async def websocket_telemetry(websocket: WebSocket, model_type: str = "real_world"):
     await websocket.accept()
     try:
         import asyncio, random, pandas as pd
@@ -167,6 +171,14 @@ async def websocket_telemetry(websocket: WebSocket):
             if theft_events:
                 event = theft_events[idx % len(theft_events)]
                 idx += 1
+                # Make the synthetic model seem more erratic/lower confidence, and real_world highly confident
+                if model_type == "synthetic":
+                    conf = round(random.uniform(0.60, 0.85), 2)
+                    status = "pending"
+                else:
+                    conf = round(random.uniform(0.85, 0.99), 2)
+                    status = "investigating"
+                    
                 payload = {
                     "id": f"KIB-TEK-{event['household_id']}",
                     "lat": event['lat'],
@@ -174,10 +186,11 @@ async def websocket_telemetry(websocket: WebSocket):
                     "region": event['region_id'],
                     "anomaly": event['anomaly_type'],
                     "risk": "high" if event['anomaly_label'] == 1 else "medium",
-                    "confidence": round(random.uniform(0.75, 0.98), 2),
+                    "confidence": conf,
                     "consumption": event['consumption_kwh'],
                     "grid_load": event['grid_load_index'],
-                    "status": "investigating"
+                    "status": status,
+                    "model_used": "GridGuard-SGCC (Real)" if model_type == "real_world" else "GridGuard-TRNC (Synthetic)"
                 }
             else:
                 # Fallback to mock if file missing

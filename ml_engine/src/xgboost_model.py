@@ -40,7 +40,13 @@ class XGBoostBaseline:
 
     def load_model(self, filepath):
         with open(filepath, 'rb') as f:
-            self.model = pickle.load(f)
+            obj = pickle.load(f)
+            if isinstance(obj, dict):
+                self.model = obj["clf"]
+                self.tau_edge = obj.get("tau_edge", 0.60)
+            else:
+                self.model = obj
+                self.tau_edge = 0.60
 if __name__ == "__main__":
     import torch
     import os

@@ -1,1 +1,1 @@
-# GridGuard Real-Data Pipeline — preprocessing package
+# GridGuard Real-Data Pipeline -- preprocessing package

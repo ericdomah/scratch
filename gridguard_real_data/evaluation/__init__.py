@@ -1,1 +1,1 @@
-# GridGuard Real-Data Pipeline — evaluation package
+# GridGuard Real-Data Pipeline -- evaluation package

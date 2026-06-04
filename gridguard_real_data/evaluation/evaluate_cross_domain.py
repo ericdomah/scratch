@@ -1,12 +1,12 @@
 """
-Experiments 3 & 4 — Cross-Domain Zero-Shot Evaluation
+Experiments 3 & 4 -- Cross-Domain Zero-Shot Evaluation
 =======================================================
-Experiment 3: SGCC-trained model  →  Synthetic TRNC (Reverse Transfer)
-Experiment 4: SGCC-trained model  →  TDD2022      (Cross-Domain)
+Experiment 3: SGCC-trained model  ->  Synthetic TRNC (Reverse Transfer)
+Experiment 4: SGCC-trained model  ->  TDD2022      (Cross-Domain)
 
 Both experiments:
   - Load best weights from models/gridguard_sgcc_best.pth (Experiment 1 best fold)
-  - No fine-tuning — zero-shot evaluation only
+  - No fine-tuning -- zero-shot evaluation only
   - Also apply the saved XGBoost for late fusion where tabular features exist
   - Report: F1, Precision, Recall, AUROC, Brier, degradation % vs SGCC in-domain
 
@@ -45,9 +45,9 @@ sys.path.insert(0, str(ROOT))
 from models.gridguard_model import GridGuardUniversalHybrid
 from preprocessing.sgcc_pipeline import compute_tabular_features
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Constants
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 BATCH_SIZE = 128
 THRESHOLD  = 0.5270
 
@@ -57,9 +57,9 @@ SGCC_INDOMAIN_F1    = None   # will be read from exp1 CSV if available
 SGCC_INDOMAIN_AUROC = None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Helpers
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def load_best_model(weights_path: str, device: str) -> GridGuardUniversalHybrid:
     model = GridGuardUniversalHybrid().to(device)
@@ -130,7 +130,7 @@ def load_sgcc_indomain_metrics(result_dir: str) -> Tuple[Optional[float], Option
     if not os.path.isfile(csv_path):
         return None, None
     df = pd.read_csv(csv_path)
-    # summary row has 'mean ± SD' in Fold column
+    # summary row has 'mean +/- SD' in Fold column
     summary = df[df["Fold"].astype(str).str.startswith("mean")]
     if summary.empty:
         # fallback: use numeric rows mean
@@ -139,18 +139,18 @@ def load_sgcc_indomain_metrics(result_dir: str) -> Tuple[Optional[float], Option
         auroc = pd.to_numeric(numeric["Fused_AUROC"], errors="coerce").mean()
         return float(f1), float(auroc)
     row = summary.iloc[0]
-    # format: "0.9123 ± 0.0045  [95%CI ±0.0034]"
+    # format: "0.9123 +/- 0.0045  [95%CI +/-0.0034]"
     def parse_mean(s: str) -> Optional[float]:
         try:
-            return float(str(s).split("±")[0].strip())
+            return float(str(s).split("+/-")[0].strip())
         except Exception:
             return None
     return parse_mean(row.get("Fused_F1")), parse_mean(row.get("Fused_AUROC"))
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Experiment 3 — Synthetic TRNC Reverse Transfer
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+#  Experiment 3 -- Synthetic TRNC Reverse Transfer
+# -----------------------------------------------------------------------------
 
 def run_exp3_reverse_transfer(
     weights_path: str,
@@ -170,7 +170,7 @@ def run_exp3_reverse_transfer(
                      If absent, experiment is skipped.
     """
     print(f"\n{'='*60}")
-    print(f"  EXPERIMENT 3 — Reverse Transfer: SGCC → Synthetic TRNC")
+    print(f"  EXPERIMENT 3 -- Reverse Transfer: SGCC -> Synthetic TRNC")
     print(f"{'='*60}")
 
     if not os.path.isfile(trnc_test_path):
@@ -202,11 +202,11 @@ def run_exp3_reverse_transfer(
         feats = compute_tabular_features(X.numpy())
         p_xgb  = clf.predict_proba(feats)[:, 1]
         p_final = fuse_predictions(p_dl, p_xgb)
-        label  = "SGCC-trained (Fused) → TRNC zero-shot"
+        label  = "SGCC-trained (Fused) -> TRNC zero-shot"
     else:
         p_final = p_dl
-        label   = "SGCC-trained (DL-only) → TRNC zero-shot"
-        print("  [WARN] XGBoost model not found — using DL-only probabilities")
+        label   = "SGCC-trained (DL-only) -> TRNC zero-shot"
+        print("  [WARN] XGBoost model not found -- using DL-only probabilities")
 
     metrics = compute_metrics(y_np, p_final)
     print(f"\n  {label}")
@@ -230,14 +230,14 @@ def run_exp3_reverse_transfer(
     csv_path = os.path.join(output_dir, "results", "exp3_reverse_transfer.csv")
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     row_df.to_csv(csv_path, index=False)
-    print(f"  Results → {csv_path}")
+    print(f"  Results -> {csv_path}")
 
     return row_df
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Experiment 4 — TDD2022 Cross-Domain
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+#  Experiment 4 -- TDD2022 Cross-Domain
+# -----------------------------------------------------------------------------
 
 def run_exp4_cross_domain_tdd(
     weights_path: str,
@@ -255,7 +255,7 @@ def run_exp4_cross_domain_tdd(
     tdd_path : directory containing TDD2022 CSV
     """
     print(f"\n{'='*60}")
-    print(f"  EXPERIMENT 4 — Cross-Domain: SGCC → TDD2022")
+    print(f"  EXPERIMENT 4 -- Cross-Domain: SGCC -> TDD2022")
     print(f"{'='*60}")
 
     if not os.path.isdir(tdd_path) or not any(
@@ -286,11 +286,11 @@ def run_exp4_cross_domain_tdd(
         feats   = compute_tabular_features(X.numpy())
         p_xgb   = clf.predict_proba(feats)[:, 1]
         p_final = fuse_predictions(p_dl, p_xgb)
-        label   = "SGCC-trained (Fused) → TDD2022 zero-shot"
+        label   = "SGCC-trained (Fused) -> TDD2022 zero-shot"
     else:
         p_final = p_dl
-        label   = "SGCC-trained (DL-only) → TDD2022 zero-shot"
-        print("  [WARN] XGBoost model not found — using DL-only probabilities")
+        label   = "SGCC-trained (DL-only) -> TDD2022 zero-shot"
+        print("  [WARN] XGBoost model not found -- using DL-only probabilities")
 
     metrics = compute_metrics(y_np, p_final)
     print(f"\n  {label}")
@@ -314,14 +314,14 @@ def run_exp4_cross_domain_tdd(
     csv_path = os.path.join(output_dir, "results", "exp4_cross_domain_tdd.csv")
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     row_df.to_csv(csv_path, index=False)
-    print(f"  Results → {csv_path}")
+    print(f"  Results -> {csv_path}")
 
     return row_df
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  CLI entry-point
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import argparse

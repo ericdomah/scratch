@@ -2,9 +2,10 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from ensemble_model import GridGuardUniversalHybrid
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../gridguard_real_data/models')))
+from gridguard_model import GridGuardUniversalHybrid
 from xai_engine import XAIEngine
-from train_hybrid_system_v2 import HybridKibTekSGCCDataset, build_kibtek_gli_lookup
 
 def visualize_explanation():
     print("=" * 60)
@@ -13,27 +14,36 @@ def visualize_explanation():
 
     # 1. Setup
     device = 'cpu'
-    model = GridGuardUniversalHybrid(window_size=26, input_dim=2, hidden_dim=64)
+    model = GridGuardUniversalHybrid(input_dim=2, hidden_dim=64)
     
-    model_path = "best_model_balanced.pth"
+    # Load Real-World SGCC weights
+    model_path = "../../gridguard_real_data/models/gridguard_sgcc_best.pth"
     if os.path.exists(model_path):
         model.load_state_dict(torch.load(model_path, map_location=device))
-        print(f"[OK] Loaded trained model: {model_path}")
+        print(f"[OK] Loaded Real-World SGCC model: {model_path}")
     else:
-        print("[!] No trained model found. Using random weights for demo.")
+        print(f"[!] No trained model found at {model_path}. Using random weights for demo.")
 
     xai = XAIEngine(model, device=device)
 
-    # 2. Get Data
-    print("Building empirical GLI profile from KIB-TEK SCADA telemetry...")
-    gli_lookup = build_kibtek_gli_lookup()
-    dataset = HybridKibTekSGCCDataset(kibtek_gli_lookup=gli_lookup, inject_ratio=0.15)
+    # 2. Synthesize Programmatic Baseline
+    print("Synthesizing purely programmatic baseline (Normal & Partial Bypass)...")
     
-    # Find a normal sample
-    normal_x, _ = dataset[0] # (26, 2)
+    # Shape: (26, 2)
+    # Channel 0: kWh (Oscillating sine wave 0.2 to 0.8)
+    # Channel 1: GLI (Summer peaking curve)
+    normal_x = np.zeros((26, 2))
     
-    # Generate a synthetic thief (Partial Bypass) for clear visualization
-    # We'll reduce consumption by 80% from week 12 to 20 on the kWh channel (column 0)
+    # Baseline kWh: stable consumption with slight weekly variance
+    normal_x[:, 0] = 0.5 + 0.15 * np.sin(np.linspace(0, 10 * np.pi, 26))
+    
+    # Baseline GLI: peaks in the middle of the 26-week summer window
+    normal_x[:, 1] = 0.5 + 0.3 * np.sin(np.linspace(0, np.pi, 26))
+    
+    normal_x = torch.tensor(normal_x, dtype=torch.float32)
+    
+    # Generate a synthetic thief (Partial Bypass)
+    # Reduce consumption by 80% from week 12 to 20 on the kWh channel (column 0)
     thief_x = normal_x.clone()
     thief_x[12:20, 0] = thief_x[12:20, 0] * 0.2
     
@@ -54,7 +64,7 @@ def visualize_explanation():
     ax1 = axes[0]
     ax1.plot(normal_x[:, 0].numpy(), label='Consumption (kWh)', color='#2ecc71', linewidth=2)
     ax1.set_title("Normal Consumer: Background Suspicion Heatmap", fontweight='bold')
-    ax1.set_ylabel("Energy (kWh)")
+    ax1.set_ylabel("Energy (Normalized)")
     
     # Overlay saliency as heatmap
     for i in range(len(saliency_normal)):
@@ -63,9 +73,9 @@ def visualize_explanation():
     # --- Plot Thief Case ---
     ax2 = axes[1]
     ax2.plot(thief_x[:, 0].numpy(), label='Consumption (kWh)', color='#e67e22', linewidth=2)
-    ax2.set_title("Flagged Thief: Partial Bypass Detected (Red = Suspicion)", fontweight='bold')
-    ax2.set_ylabel("Energy (kWh)")
-    ax2.set_xlabel("Week of Window")
+    ax2.set_title("Flagged Thief (Real-World SGCC Model): Partial Bypass Detected (Red = Suspicion)", fontweight='bold')
+    ax2.set_ylabel("Energy (Normalized)")
+    ax2.set_xlabel("Week of Sequence Window (1-26)")
     
     # Overlay saliency as heatmap
     for i in range(len(saliency_thief)):
@@ -73,10 +83,10 @@ def visualize_explanation():
 
     # 5. Save Report
     os.makedirs("outputs", exist_ok=True)
-    report_path = "outputs/xai_report.png"
-    plt.savefig(report_path)
+    report_path = "outputs/xai_sgcc_report.png"
+    plt.savefig(report_path, dpi=300, bbox_inches='tight')
     print("=" * 60)
-    print(f"[SUCCESS] XAI Visualization Report saved to: {report_path}")
+    print(f"[SUCCESS] SGCC XAI Visualization Report saved to: {report_path}")
     print("=" * 60)
 
 if __name__ == "__main__":

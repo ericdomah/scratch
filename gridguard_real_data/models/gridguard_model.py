@@ -1,5 +1,5 @@
 """
-GridGuard AI — Model Definitions (Phase 1: Real-Data Training)
+GridGuard AI -- Model Definitions (Phase 1: Real-Data Training)
 ==============================================================
 Contains:
   - TCNBlock
@@ -10,7 +10,7 @@ Contains:
 Architecture is frozen per thesis specification:
   TCN (2-block, dilation=[1,2]) + Bi-LSTM (h=64, 2-layer)
   + Transformer Encoder (d=128, 4-head, 2-layer)
-  Late fusion: 0.70 × P_DL + 0.30 × P_XGB, τ = 0.5270
+  Late fusion: 0.70 x P_DL + 0.30 x P_XGB, ? = 0.5270
 """
 
 import torch
@@ -18,9 +18,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 #  TCN Block
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 class TCNBlock(nn.Module):
     """Dilated causal temporal convolutional block with residual connection."""
@@ -43,13 +43,13 @@ class TCNBlock(nn.Module):
         return F.relu(out + res)
 
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 #  GridGuardUniversalHybrid  (DO NOT CHANGE)
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 class GridGuardUniversalHybrid(nn.Module):
     """
-    Two-tier hybrid model: TCN → Bi-LSTM → Transformer Encoder.
+    Two-tier hybrid model: TCN -> Bi-LSTM -> Transformer Encoder.
     Input shape : (B, T=26, 2)   channel-0 = kWh, channel-1 = GLI
     Output shape: (B, 1)          raw sigmoid probability
     """
@@ -107,14 +107,14 @@ class GridGuardUniversalHybrid(nn.Module):
         return self.fc(fused)                               # (B, 1)
 
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 #  Asymmetric Focal Loss  (DO NOT CHANGE)
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 class AsymmetricFocalLoss(nn.Module):
     """
     Asymmetric focal loss for severe class imbalance (5% theft in SGCC).
-    α=0.80 upweights theft class; γ_neg=4.0 > γ_pos=2.0 to suppress easy negatives.
+    ?=0.80 upweights theft class; ?_neg=4.0 > ?_pos=2.0 to suppress easy negatives.
     """
 
     def __init__(self, alpha: float = 0.80,
@@ -142,13 +142,13 @@ class AsymmetricFocalLoss(nn.Module):
         return (alpha_t * focal_w * bce).mean()
 
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 #  BiGRU-BiLSTM Baseline  (walk-forward comparison)
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 class BiGRUBiLSTMBaseline(nn.Module):
     """
-    Bidirectional GRU → Bidirectional LSTM baseline.
+    Bidirectional GRU -> Bidirectional LSTM baseline.
     Same input/output contract as GridGuardUniversalHybrid.
     Used for significance comparison in Experiment 2 (walk-forward).
     """
@@ -181,9 +181,9 @@ class BiGRUBiLSTMBaseline(nn.Module):
         return self.fc(lstm_out[:, -1, :])
 
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 #  Convenience factory
-# ─────────────────────────────────────────────
+# ---------------------------------------------
 
 def build_model(model_type: str = 'gridguard', device: str = 'cpu') -> nn.Module:
     """Return a freshly initialised model on the specified device."""

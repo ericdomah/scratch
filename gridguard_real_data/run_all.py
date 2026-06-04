@@ -1,5 +1,5 @@
 """
-GridGuard AI — Phase 1 Master Script
+GridGuard AI -- Phase 1 Master Script
 ======================================
 Runs all four experiments end-to-end and produces the final comparison table.
 
@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-# ── path setup ────────────────────────────────────────────────────────────────
+# -- path setup ----------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
@@ -46,9 +46,9 @@ from evaluation.evaluate_cross_domain import (
     load_sgcc_indomain_metrics,
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Global seed
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 SEED = 42
 
 
@@ -59,32 +59,32 @@ def set_global_seed(seed: int = SEED):
     torch.cuda.manual_seed_all(seed)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Final Results Table Builder
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 EXISTING_RESULTS = [
     {
-        "Experiment":  "Synthetic TRNC → TRNC (existing, Walk-Forward)",
+        "Experiment":  "Synthetic TRNC -> TRNC (existing, Walk-Forward)",
         "F1":    0.893, "AUROC": 0.943,
         "Precision": 0.911, "Recall": 0.875, "Brier": 0.042,
         "Source": "Thesis (synthetic training)",
     },
     {
-        "Experiment":  "Synthetic TRNC → SGCC cross-domain zero-shot (existing)",
+        "Experiment":  "Synthetic TRNC -> SGCC cross-domain zero-shot (existing)",
         "F1":    0.783, "AUROC": 0.871,
-        "Precision": 0.842, "Recall": 0.732, "Brier": "—",
+        "Precision": 0.842, "Recall": 0.732, "Brier": "--",
         "Source": "Thesis (zero-shot)",
     },
 ]
 
 
 def _parse_mean(val) -> str:
-    """Extract a display-ready mean from a '0.9123 ± ...' string or float."""
+    """Extract a display-ready mean from a '0.9123 +/- ...' string or float."""
     if isinstance(val, float):
         return f"{val:.4f}"
     s = str(val)
-    return s.split("±")[0].strip()
+    return s.split("+/-")[0].strip()
 
 
 def build_final_table(
@@ -120,14 +120,14 @@ def build_final_table(
             prec  = pd.to_numeric(numeric[prec_col],  errors="coerce").mean()
             rec   = pd.to_numeric(numeric[rec_col],   errors="coerce").mean()
             brier = (pd.to_numeric(numeric[brier_col], errors="coerce").mean()
-                     if brier_col and brier_col in numeric.columns else "—")
+                     if brier_col and brier_col in numeric.columns else "--")
         else:
             row   = summary.iloc[0]
             f1    = _parse_mean(row.get(f1_col))
             auroc = _parse_mean(row.get(auroc_col))
-            prec  = _parse_mean(row.get(prec_col,  "—"))
-            rec   = _parse_mean(row.get(rec_col,   "—"))
-            brier = _parse_mean(row.get(brier_col, "—")) if brier_col else "—"
+            prec  = _parse_mean(row.get(prec_col,  "--"))
+            rec   = _parse_mean(row.get(rec_col,   "--"))
+            brier = _parse_mean(row.get(brier_col, "--")) if brier_col else "--"
 
         return {
             "Experiment": name,
@@ -136,20 +136,20 @@ def build_final_table(
             "Precision": prec if isinstance(prec, str) else round(float(prec), 4),
             "Recall":    rec if isinstance(rec, str) else round(float(rec), 4),
             "Brier":     brier if isinstance(brier, str) else round(float(brier), 4),
-            "Source":    "Phase 1 — Real Data",
+            "Source":    "Phase 1 -- Real Data",
         }
 
     # Experiment 1 (standard CV)
     rows.append(_row_from_df(
         exp1_df,
-        "Real SGCC → SGCC (Standard CV, 10-fold)",
+        "Real SGCC -> SGCC (Standard CV, 10-fold)",
         "Fused_F1", "Fused_AUROC", "Fused_Precision", "Fused_Recall", "Fused_Brier",
     ))
 
     # Experiment 2 (walk-forward)
     rows.append(_row_from_df(
         exp2_df,
-        "Real SGCC → SGCC (Walk-Forward, 7-round)",
+        "Real SGCC -> SGCC (Walk-Forward, 7-round)",
         "GG_F1", "GG_AUROC", "GG_Precision", "GG_Recall", "GG_Brier",
     ))
 
@@ -157,17 +157,17 @@ def build_final_table(
     if exp3_df is not None and not exp3_df.empty:
         r = exp3_df.iloc[0]
         rows.append({
-            "Experiment": "Real SGCC → Synthetic TRNC (Reverse Transfer)",
+            "Experiment": "Real SGCC -> Synthetic TRNC (Reverse Transfer)",
             "F1":        round(float(r.get("F1",    0)), 4),
             "AUROC":     round(float(r.get("AUROC", 0)), 4),
             "Precision": round(float(r.get("Precision", 0)), 4),
             "Recall":    round(float(r.get("Recall", 0)), 4),
             "Brier":     round(float(r.get("Brier", 0)), 4),
-            "Source":    "Phase 1 — Real Data",
+            "Source":    "Phase 1 -- Real Data",
         })
     else:
         rows.append({
-            "Experiment": "Real SGCC → Synthetic TRNC (Reverse Transfer)",
+            "Experiment": "Real SGCC -> Synthetic TRNC (Reverse Transfer)",
             "F1": "SKIPPED", "AUROC": "SKIPPED",
             "Precision": "SKIPPED", "Recall": "SKIPPED", "Brier": "SKIPPED",
             "Source": "Skipped (no TRNC holdout .pt found)",
@@ -177,17 +177,17 @@ def build_final_table(
     if exp4_df is not None and not exp4_df.empty:
         r = exp4_df.iloc[0]
         rows.append({
-            "Experiment": "Real SGCC → TDD2022 (Cross-Domain Zero-Shot)",
+            "Experiment": "Real SGCC -> TDD2022 (Cross-Domain Zero-Shot)",
             "F1":        round(float(r.get("F1",    0)), 4),
             "AUROC":     round(float(r.get("AUROC", 0)), 4),
             "Precision": round(float(r.get("Precision", 0)), 4),
             "Recall":    round(float(r.get("Recall", 0)), 4),
             "Brier":     round(float(r.get("Brier", 0)), 4),
-            "Source":    "Phase 1 — Real Data",
+            "Source":    "Phase 1 -- Real Data",
         })
     else:
         rows.append({
-            "Experiment": "Real SGCC → TDD2022 (Cross-Domain Zero-Shot)",
+            "Experiment": "Real SGCC -> TDD2022 (Cross-Domain Zero-Shot)",
             "F1": "SKIPPED", "AUROC": "SKIPPED",
             "Precision": "SKIPPED", "Recall": "SKIPPED", "Brier": "SKIPPED",
             "Source": "Skipped (no TDD2022 CSV found)",
@@ -201,7 +201,7 @@ def build_final_table(
 
 def print_final_table(table: pd.DataFrame):
     print("\n" + "=" * 105)
-    print("  GRIDGUARD AI — PHASE 1 FINAL RESULTS TABLE")
+    print("  GRIDGUARD AI -- PHASE 1 FINAL RESULTS TABLE")
     print("=" * 105)
     header = (
         f"{'Experiment':<52} {'F1':>7} {'AUROC':>7} "
@@ -220,13 +220,13 @@ def print_final_table(table: pd.DataFrame):
     print("=" * 105)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Main
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def main():
     ap = argparse.ArgumentParser(
-        description="GridGuard AI Phase 1 — Real-Data Training Pipeline"
+        description="GridGuard AI Phase 1 -- Real-Data Training Pipeline"
     )
     ap.add_argument("--sgcc_path",  required=True,
                     help="Directory containing the SGCC CSV file")
@@ -250,7 +250,7 @@ def main():
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"\n{'#'*60}")
-    print(f"  GridGuard AI — Phase 1 Real-Data Training")
+    print(f"  GridGuard AI -- Phase 1 Real-Data Training")
     print(f"  Device : {device}")
     print(f"  Seed   : {SEED}")
     print(f"  Output : {output_dir}")
@@ -258,14 +258,14 @@ def main():
 
     t0 = time.time()
 
-    # ── Load & preprocess SGCC (shared across Exp 1 & 2) ─────────────────────
+    # -- Load & preprocess SGCC (shared across Exp 1 & 2) ---------------------
     sgcc_cache = os.path.join(args.sgcc_path, "sgcc_processed.pt")
     X_sgcc, y_sgcc, meta_sgcc = run_sgcc_pipeline(
         args.sgcc_path, cache_path=sgcc_cache
     )
     print(f"SGCC ready: {X_sgcc.shape}  theft={y_sgcc.mean():.3%}\n")
 
-    # ── Experiment 1: Standard CV ─────────────────────────────────────────────
+    # -- Experiment 1: Standard CV ---------------------------------------------
     exp1_df = None
     if not args.skip_exp1:
         exp1_df = run_standard_cv(X_sgcc, y_sgcc, output_dir=output_dir)
@@ -277,7 +277,7 @@ def main():
         else:
             print("[Exp 1 SKIPPED] No existing results found.")
 
-    # ── Experiment 2: Walk-Forward ────────────────────────────────────────────
+    # -- Experiment 2: Walk-Forward --------------------------------------------
     exp2_df = None
     if not args.skip_exp2:
         exp2_df = run_walk_forward(X_sgcc, y_sgcc, meta_sgcc, output_dir=output_dir)
@@ -289,7 +289,7 @@ def main():
         else:
             print("[Exp 2 SKIPPED] No existing results found.")
 
-    # ── Resolve in-domain SGCC metrics for degradation reporting ─────────────
+    # -- Resolve in-domain SGCC metrics for degradation reporting -------------
     sgcc_f1, sgcc_auroc = load_sgcc_indomain_metrics(
         os.path.join(output_dir, "results")
     )
@@ -301,7 +301,7 @@ def main():
     )
     tdd_dir      = args.tdd_path or os.path.join(output_dir, "data", "tdd2022")
 
-    # ── Experiment 3: Reverse Transfer ────────────────────────────────────────
+    # -- Experiment 3: Reverse Transfer ----------------------------------------
     exp3_df = None
     if not args.skip_exp3:
         exp3_df = run_exp3_reverse_transfer(
@@ -309,7 +309,7 @@ def main():
             sgcc_f1=sgcc_f1, sgcc_auroc=sgcc_auroc,
         )
 
-    # ── Experiment 4: TDD2022 Cross-Domain ───────────────────────────────────
+    # -- Experiment 4: TDD2022 Cross-Domain -----------------------------------
     exp4_df = None
     if not args.skip_exp4:
         exp4_df = run_exp4_cross_domain_tdd(
@@ -317,18 +317,18 @@ def main():
             sgcc_f1=sgcc_f1, sgcc_auroc=sgcc_auroc,
         )
 
-    # ── Final Table ───────────────────────────────────────────────────────────
+    # -- Final Table -----------------------------------------------------------
     final_table = build_final_table(output_dir, exp1_df, exp2_df, exp3_df, exp4_df)
     print_final_table(final_table)
 
     csv_out = os.path.join(output_dir, "results", "sgcc_real_training_results.csv")
     final_table.to_csv(csv_out, index=False)
-    print(f"\n  ✓  Final results saved → {csv_out}")
+    print(f"\n  [OK]  Final results saved -> {csv_out}")
 
     elapsed = time.time() - t0
     h, rem  = divmod(int(elapsed), 3600)
     m, s    = divmod(rem, 60)
-    print(f"  ✓  Total wall-clock time: {h:02d}h {m:02d}m {s:02d}s\n")
+    print(f"  [OK]  Total wall-clock time: {h:02d}h {m:02d}m {s:02d}s\n")
 
 
 if __name__ == "__main__":

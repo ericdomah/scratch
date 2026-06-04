@@ -9,16 +9,16 @@ Real df.csv layout (Mendeley download):
   - Columns: '0' (hour index), 'Electricity:Facility [kW](Hourly)' (consumption),
     'Class' (16 building types), 'theft' (Normal | Theft1..Theft6)
   - Each (Class, theft) pair = one "consumer" time series
-  - 16 classes × 7 theft/normal labels × 35,040 h ≈ 208 weeks per consumer
+  - 16 classes x 7 theft/normal labels x 35,040 h ? 208 weeks per consumer
 
 Pipeline steps
 --------------
-1.  Load CSV — detect native TDD2022 format or fallback to wide/long
-2.  Group by (Class, theft) → separate consumer time series
-3.  Aggregate hourly → weekly totals (168 h per week)
-4.  Per-consumer min-max normalisation → [0, 1]
+1.  Load CSV -- detect native TDD2022 format or fallback to wide/long
+2.  Group by (Class, theft) -> separate consumer time series
+3.  Aggregate hourly -> weekly totals (168 h per week)
+4.  Per-consumer min-max normalisation -> [0, 1]
 5.  Sliding 26-week windows
-6.  Binary labels: all Theft* → 1, Normal → 0
+6.  Binary labels: all Theft* -> 1, Normal -> 0
 7.  Compute GLI across all consumers
 8.  Stack into (N, 26, 2) tensor
 """
@@ -36,8 +36,8 @@ import torch
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-WINDOW_SIZE    = 26    # weeks — must match thesis architecture
-HOURS_PER_WEEK = 168   # 7 × 24
+WINDOW_SIZE    = 26    # weeks -- must match thesis architecture
+HOURS_PER_WEEK = 168   # 7 x 24
 
 # Column name in the real Mendeley df.csv
 _TDD_KWH_COL   = "Electricity:Facility [kW](Hourly)"
@@ -45,9 +45,9 @@ _TDD_CLASS_COL = "Class"
 _TDD_THEFT_COL = "theft"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  1.  Loader & Format Detection
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def load_tdd2022(data_dir: str) -> pd.DataFrame:
     """Locate and load the TDD2022 CSV from *data_dir*."""
@@ -77,9 +77,9 @@ def load_tdd2022(data_dir: str) -> pd.DataFrame:
 def _detect_format(df: pd.DataFrame) -> str:
     """
     Detect CSV format:
-      'tdd_native' — real Mendeley df.csv (Class + theft + Electricity columns)
-      'wide'       — rows=hours, columns=consumers
-      'long'       — generic long format
+      'tdd_native' -- real Mendeley df.csv (Class + theft + Electricity columns)
+      'wide'       -- rows=hours, columns=consumers
+      'long'       -- generic long format
     """
     cols = list(df.columns)
     has_elec  = any("Electricity" in c and "Facility" in c for c in cols)
@@ -93,9 +93,9 @@ def _detect_format(df: pd.DataFrame) -> str:
     return "wide"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Native TDD2022 handler  (real Mendeley df.csv)
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def _parse_tdd_native(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -146,9 +146,9 @@ def _parse_tdd_native(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     return consumption, np.array(label_list, dtype=int)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Wide-format handler (Format A)
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 _THEFT_PATTERNS = re.compile(r"theft|attack|tamper|anomal", re.IGNORECASE)
 _NORMAL_PATTERNS = re.compile(r"normal|legit|genuine", re.IGNORECASE)
@@ -185,9 +185,9 @@ def _parse_wide(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray, List[int]]:
     return data, labels, list(range(len(consumer_cols)))
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Long-format handler (Format B)
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def _parse_long(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -195,7 +195,7 @@ def _parse_long(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
 
     Returns
     -------
-    consumption : (N_consumers, N_hours)  — zero-padded if unequal lengths
+    consumption : (N_consumers, N_hours)  -- zero-padded if unequal lengths
     labels      : (N_consumers,)
     """
     cols_lower = {c.lower(): c for c in df.columns}
@@ -245,9 +245,9 @@ def _parse_long(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     return consumption, np.array(label_list, dtype=int)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  2-7.  Full Preprocessing
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def preprocess_tdd2022(
     df: pd.DataFrame,
@@ -270,7 +270,7 @@ def preprocess_tdd2022(
     metadata    : bookkeeping dict
     """
 
-    # ── Step 1 : parse by format ──────────────────────────────────────────────
+    # -- Step 1 : parse by format ----------------------------------------------
     fmt = _detect_format(df)
     if verbose:
         print(f"[TDD2022] Detected format: {fmt!r}")
@@ -289,25 +289,25 @@ def preprocess_tdd2022(
         print(f"[TDD2022] Theft rate: {labels.mean():.3%}  "
               f"({labels.sum()} / {len(labels)})")
 
-    # ── Step 2 : hourly → weekly totals ──────────────────────────────────────
+    # -- Step 2 : hourly -> weekly totals --------------------------------------
     n_full_weeks = n_hours // HOURS_PER_WEEK
     if n_full_weeks < window_size:
         raise ValueError(
             f"TDD2022 has only {n_full_weeks} full weeks but "
             f"window_size={window_size}.  "
-            f"Check that you have ≥{window_size} weeks of data."
+            f"Check that you have ?{window_size} weeks of data."
         )
     hour_trim = consumption[:, : n_full_weeks * HOURS_PER_WEEK]
-    # (N, n_full_weeks, 168) → sum → (N, n_full_weeks)
+    # (N, n_full_weeks, 168) -> sum -> (N, n_full_weeks)
     weekly_raw = hour_trim.reshape(n_consumers, n_full_weeks, HOURS_PER_WEEK).sum(axis=2)
 
-    # ── Step 3 : per-consumer min-max normalisation ───────────────────────────
+    # -- Step 3 : per-consumer min-max normalisation ---------------------------
     w_min = weekly_raw.min(axis=1, keepdims=True)
     w_max = weekly_raw.max(axis=1, keepdims=True)
     w_rng = np.where(w_max - w_min > 0, w_max - w_min, 1.0)
     weekly = (weekly_raw - w_min) / w_rng   # (N, n_full_weeks)
 
-    # ── Step 4 : sliding 26-week windows ─────────────────────────────────────
+    # -- Step 4 : sliding 26-week windows -------------------------------------
     n_win = n_full_weeks - window_size + 1
     total = n_consumers * n_win
     X_kwh = np.empty((total, window_size), dtype=np.float32)
@@ -316,7 +316,7 @@ def preprocess_tdd2022(
     cons_idx_arr  = np.empty(total, dtype=np.int32)
     win_start_arr = np.empty(total, dtype=np.int32)
 
-    # ── Step 6 : compute GLI (same definition as SGCC) ───────────────────────
+    # -- Step 6 : compute GLI (same definition as SGCC) -----------------------
     substation_load = weekly.sum(axis=0)          # (n_full_weeks,)
     gli_denom       = substation_load.max()
     gli             = substation_load / (gli_denom if gli_denom > 0 else 1.0)
@@ -331,7 +331,7 @@ def preprocess_tdd2022(
             win_start_arr[idx] = w
             idx += 1
 
-    # ── Step 7 : stack into (N, 26, 2) ───────────────────────────────────────
+    # -- Step 7 : stack into (N, 26, 2) ---------------------------------------
     X = np.stack([X_kwh, X_gli], axis=2)
 
     if verbose:
@@ -356,9 +356,9 @@ def preprocess_tdd2022(
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Convenience entry-point
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def run_tdd2022_pipeline(
     data_dir: str,
@@ -379,17 +379,17 @@ def run_tdd2022_pipeline(
         os.makedirs(os.path.dirname(cache_path), exist_ok=True)
         torch.save({"X": X, "y": y, "metadata": meta}, cache_path)
         if verbose:
-            print(f"[TDD2022] Cached tensors → {cache_path}")
+            print(f"[TDD2022] Cached tensors -> {cache_path}")
 
     return X, y, meta
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  CLI smoke-test
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import sys
     data_dir = sys.argv[1] if len(sys.argv) > 1 else "data/tdd2022"
     X, y, meta = run_tdd2022_pipeline(data_dir)
-    print(f"\n✓  X={X.shape}  y={y.shape}  theft={y.mean():.3%}")
+    print(f"\n[OK]  X={X.shape}  y={y.shape}  theft={y.mean():.3%}")

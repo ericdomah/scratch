@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Navbar() {
   const { user, logout } = useAuthStore();
-  const { liveAlerts, setSelectedMeterId } = useGridStore();
+  const { liveAlerts, triggerInspect, config, updateConfig } = useGridStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -22,15 +22,30 @@ export default function Navbar() {
   }, []);
 
   const handleNotificationClick = (id: string) => {
-    setSelectedMeterId(id);
+    triggerInspect(id);
     setShowNotifications(false);
     navigate('/map');
   };
 
   return (
     <header className="h-16 bg-[#000000] border-b border-[#1e293b] flex items-center justify-between px-6 sticky top-0 z-50 font-mono">
-      <div className="flex items-center">
-        <h1 className="text-xl font-semibold text-white tracking-tight">System Overview</h1>
+      <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-2">
+          <ShieldAlert className="h-5 w-5 text-emerald-400" />
+          <h1 className="text-lg font-bold text-white tracking-tight uppercase">KIB-TEK SOC</h1>
+        </div>
+        
+        <div className="flex items-center space-x-2 bg-[#1e293b]/50 px-3 py-1.5 border border-[#334155]">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Engine:</span>
+          <select 
+            className="bg-transparent text-xs font-bold text-[#00f0ff] focus:outline-none cursor-pointer"
+            value={config.modelType}
+            onChange={(e) => updateConfig({ modelType: e.target.value })}
+          >
+            <option value="synthetic" className="bg-[#050505]">GridGuard Artificial Twin (Synthetic)</option>
+            <option value="real_world" className="bg-[#050505]">GridGuard Field-Tested (Real SGCC)</option>
+          </select>
+        </div>
       </div>
       
       <div className="flex items-center space-x-4">

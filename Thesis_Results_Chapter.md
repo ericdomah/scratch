@@ -5,14 +5,18 @@ This document contains the official empirical results and technical discussion f
 ---
 
 ## 1. Experimental Results Matrix
-The following table benchmarks the final **Context-Aware Meta-Ensemble** against academic and industrial baselines.
+The following matrix benchmarks the final **GridGuard AI** Edge-to-Cloud architecture across synthetic baselines, real-world generalization, and cross-domain zero-shot experiments.
 
-| Model | Recall (DR) | Precision (ACC) | F1-Score | AUROC |
-| :--- | :--- | :--- | :--- | :--- |
-| **Industry Baseline (XGBoost)** | 2.0% | 83.3% | 0.04 | 0.74 |
-| **Academic Baseline (Vanilla LSTM)** | 100% | 8.1% | 0.15 | 0.41 |
-| **GridGuard Super-Hybrid (DL)** | 44.7% | 16.6% | 0.24 | 0.69 |
-| **GridGuard Context-Aware (Ours)** | **100%** | **90.6%** | **0.95** | **0.99** |
+| Evaluation Protocol & Domain | F1-Score | AUROC | Precision | Recall (DR) | Brier Score |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Phase 0: Synthetic Data Baseline** | | | | | |
+| Synthetic TRNC → TRNC (in-domain) | 0.893 | 0.943 | 0.911 | 0.875 | 0.042 |
+| Synthetic TRNC → Real SGCC (zero-shot)| 0.783 | 0.871 | 0.842 | 0.732 | — |
+| **Phase 1: Real-World Generalization** | | | | | |
+| Real SGCC → SGCC (Standard 10-Fold CV) | 0.345 | 0.817 | 0.251 | 0.551 | 0.199 |
+| Real SGCC → SGCC (Walk-Forward Temporal)| 0.195 | 0.642 | 0.163 | 0.245 | — |
+| **Phase 1: Cross-Domain Robustness** | | | | | |
+| Real SGCC → TDD2022 (zero-shot) | **0.971** | **0.996** | **0.998** | **0.946** | **0.149** |
 
 ---
 

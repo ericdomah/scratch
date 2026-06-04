@@ -19,6 +19,7 @@ interface GridState {
     relayProtocol: string;
     apiKey: string;
     autoExport: boolean;
+    modelType: string;
   };
   
   // Actions
@@ -54,6 +55,7 @@ export const useGridStore = create<GridState>((set) => ({
     relayProtocol: 'Simulated Data Stream',
     apiKey: '************************',
     autoExport: true,
+    modelType: 'real_world',
   },
 
   addLiveAlert: (alert) => set((state) => {

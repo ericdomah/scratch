@@ -1,1 +1,1 @@
-# GridGuard Real-Data Pipeline — training package
+# GridGuard Real-Data Pipeline -- training package
