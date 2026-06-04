@@ -14,6 +14,18 @@ __pycache__/
 # Data (Ignore massive CSVs, keep small ones)
 data/*.csv
 !data/datasetsmall.csv
+data/*.z01
+data/*.z02
+data/*.zip
+data/**/*.csv
+data/**/*.pt
+gridguard_real_data/data/**/*.csv
+gridguard_real_data/data/**/*.pt
+
+# Model weights and checkpoints (too large for GitHub)
+checkpoints/
+*.pth
+*.pkl
 
 # IDE
 .vscode/
