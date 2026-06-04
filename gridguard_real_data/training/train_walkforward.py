@@ -1,5 +1,5 @@
 """
-Experiment 2 — SGCC Walk-Forward Temporal Validation (Protocol A — Primary)
+Experiment 2 -- SGCC Walk-Forward Temporal Validation (Protocol A -- Primary)
 ============================================================================
 7 expanding-window rounds.  Each round trains from scratch on a growing
 prefix of the timeline and evaluates on the subsequent 14 % block.
@@ -10,19 +10,19 @@ Cohen's d significance can be computed.
 Round schedule
 --------------
  Round  Train end  Test window
-   1       54 %    54 %–68 %
-   2       61 %    61 %–75 %
-   3       68 %    68 %–82 %
-   4       75 %    75 %–89 %
-   5       82 %    82 %–96 %
-   6       89 %    89 %–100 %  (≤14 %)
-   7       93 %    93 %–100 %  (≤7 %)  — added to complete 7 rounds
+   1       54 %    54 %?68 %
+   2       61 %    61 %?75 %
+   3       68 %    68 %?82 %
+   4       75 %    75 %?89 %
+   5       82 %    82 %?96 %
+   6       89 %    89 %?100 %  (?14 %)
+   7       93 %    93 %?100 %  (?7 %)  -- added to complete 7 rounds
 
 Temporal ordering: windows sorted by absolute start week.
 
 Outputs
 -------
-  results/exp2_walkforward.csv       — per-round metrics for both models
+  results/exp2_walkforward.csv       -- per-round metrics for both models
 """
 
 from __future__ import annotations
@@ -52,11 +52,11 @@ from models.gridguard_model import (
     AsymmetricFocalLoss, build_model,
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Constants  (same as train_sgcc.py)
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 SEED         = 42
-BATCH_SIZE   = 128
+BATCH_SIZE   = 2048
 EPOCHS       = 25
 LR           = 1e-4
 WEIGHT_DECAY = 1e-4
@@ -72,9 +72,9 @@ TEST_WINDOW_FRAC = 0.14
 WINDOW_SIZE      = 26   # must match thesis architecture (T=26 weekly timesteps)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Seed / Metrics (duplicated from train_sgcc for standalone usage)
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def set_seed(seed: int = SEED):
     random.seed(seed)
@@ -118,9 +118,9 @@ def cohens_d(a: np.ndarray, b: np.ndarray) -> float:
     return (a.mean() - b.mean()) / (pooled_std + 1e-12)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Training / Inference helpers
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def train_one_epoch(model, loader, optimizer, scheduler, criterion,
                     device, grad_clip=GRAD_CLIP):
@@ -171,9 +171,9 @@ def train_model_on_split(
     train_ds = TensorDataset(X_train, y_train)
     test_ds  = TensorDataset(X_test,  y_test)
     train_ld = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
-                          num_workers=0, pin_memory=(device == "cuda"))
+                          num_workers=2, pin_memory=(device == "cuda"))
     test_ld  = DataLoader(test_ds,  batch_size=BATCH_SIZE, shuffle=False,
-                          num_workers=0)
+                          num_workers=2)
 
     model     = build_model(model_type, device=device)
     criterion = AsymmetricFocalLoss()
@@ -202,9 +202,9 @@ def train_model_on_split(
     return get_probabilities(model, test_ld, device)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Walk-Forward Split Builder
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def build_wf_splits(
     win_start: np.ndarray,
@@ -217,7 +217,7 @@ def build_wf_splits(
     Parameters
     ----------
     win_start    : (N,) array of window start weeks for each sample
-    n_full_weeks : total weeks in the timeline (≈ 147 for SGCC)
+    n_full_weeks : total weeks in the timeline (? 147 for SGCC)
 
     Returns
     -------
@@ -233,7 +233,7 @@ def build_wf_splits(
         te_mask = (win_start >= train_end) & (win_start < test_end)
 
         if tr_mask.sum() == 0 or te_mask.sum() == 0:
-            print(f"  [WF] Skipping split: train_end={train_end_frac:.0%} — "
+            print(f"  [WF] Skipping split: train_end={train_end_frac:.0%} -- "
                   f"empty split (train={tr_mask.sum()}, test={te_mask.sum()})")
             continue
 
@@ -242,9 +242,9 @@ def build_wf_splits(
     return splits
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  Main: Walk-Forward Temporal Validation  (Experiment 2)
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 def run_walk_forward(
     X: torch.Tensor,
@@ -272,7 +272,7 @@ def run_walk_forward(
     set_seed(SEED)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"\n{'='*60}")
-    print(f"  EXPERIMENT 2 — Walk-Forward Temporal Validation  device={device}")
+    print(f"  EXPERIMENT 2 -- Walk-Forward Temporal Validation  device={device}")
     print(f"{'='*60}")
 
     result_dir = os.path.join(output_dir, "results")
@@ -286,7 +286,7 @@ def run_walk_forward(
     splits = build_wf_splits(win_start, n_full_weeks)
     print(f"  Walk-forward rounds: {len(splits)}")
 
-    # ── Guard: no valid splits (dataset too short) ────────────────────────────
+    # -- Guard: no valid splits (dataset too short) ----------------------------
     if len(splits) == 0:
         min_weeks_needed = int(n_full_weeks / ROUND_TRAIN_ENDS[0]) + WINDOW_SIZE
         print(f"  [WF] No valid walk-forward splits could be formed.")
@@ -316,7 +316,7 @@ def run_walk_forward(
     base_f1s = []   # Baseline F1 per round
 
     for rnd, (tr_idx, te_idx) in enumerate(splits, 1):
-        print(f"\n── Round {rnd}/{len(splits)} ────────────────────────────")
+        print(f"\n-- Round {rnd}/{len(splits)} ----------------------------")
         print(f"   Train: {len(tr_idx):,} samples  |  "
               f"Test: {len(te_idx):,} samples  |  "
               f"Theft (train): {y_np[tr_idx].mean():.3%}  |  "
@@ -326,18 +326,18 @@ def run_walk_forward(
         X_te = X[te_idx];  y_te = y[te_idx]
         y_te_np = y_np[te_idx]
 
-        # ── GridGuardUniversalHybrid ──────────────────────────────────────────
+        # -- GridGuardUniversalHybrid ------------------------------------------
         set_seed(SEED + rnd)
-        print(f"  Training GridGuardUniversalHybrid…")
+        print(f"  Training GridGuardUniversalHybrid...")
         p_gg = train_model_on_split(
             "gridguard", X_tr, y_tr, X_te, y_te, device, rnd, ckpt_dir
         )
         m_gg = compute_metrics(y_te_np, p_gg, prefix="GG_")
         gg_f1s.append(m_gg["GG_F1"])
 
-        # ── BiGRU-BiLSTM Baseline ─────────────────────────────────────────────
+        # -- BiGRU-BiLSTM Baseline ---------------------------------------------
         set_seed(SEED + rnd + 100)
-        print(f"  Training BiGRU-BiLSTM Baseline…")
+        print(f"  Training BiGRU-BiLSTM Baseline...")
         p_base = train_model_on_split(
             "bigru_bilstm", X_tr, y_tr, X_te, y_te, device, rnd, ckpt_dir
         )
@@ -363,7 +363,7 @@ def run_walk_forward(
               f"Prec={m_base['Base_Precision']:.4f}  "
               f"Rec={m_base['Base_Recall']:.4f}")
 
-    # ── Summary ───────────────────────────────────────────────────────────────
+    # -- Summary ---------------------------------------------------------------
     results_df = pd.DataFrame(rows)
 
     if results_df.empty:
@@ -406,9 +406,9 @@ def run_walk_forward(
     return final_df
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  CLI entry-point
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import argparse

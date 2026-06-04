@@ -49,7 +49,7 @@ from preprocessing.sgcc_pipeline import compute_tabular_features
 #  Constants
 # -----------------------------------------------------------------------------
 SEED          = 42
-BATCH_SIZE    = 128
+BATCH_SIZE    = 2048
 EPOCHS        = 25
 LR            = 1e-4
 WEIGHT_DECAY  = 1e-4
@@ -295,9 +295,9 @@ def run_standard_cv(
         train_ds = TensorDataset(X_tr, y_tr)
         val_ds   = TensorDataset(X_va, y_va)
         train_ld = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
-                              num_workers=0, pin_memory=(device == "cuda"))
+                              num_workers=2, pin_memory=(device == "cuda"))
         val_ld   = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False,
-                              num_workers=0)
+                              num_workers=2)
 
         # Fresh model each fold
         set_seed(SEED + fold)
