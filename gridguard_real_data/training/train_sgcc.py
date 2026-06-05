@@ -1,13 +1,8 @@
 """
 Experiment 1 -- SGCC Standard Cross-Validation Training (Protocol A*)
 =====================================================================
-5-fold StratifiedKFold on all SGCC windows (ONE window per consumer).
+10-fold StratifiedKFold on all SGCC windows.
 Also retrains the XGBoost edge filter on SGCC tabular features.
-
-Rationale for 5-fold (not 10):
-  ~42,000 samples × ~5% theft = ~2,100 theft total.
-  5-fold → ~420 theft per test fold (stable metrics).
-  10-fold → ~210 per fold (too few for reliable AUROC).
 
 Outputs
 -------
@@ -61,7 +56,7 @@ WEIGHT_DECAY  = 1e-4
 MAX_LR        = 2e-3
 GRAD_CLIP     = 1.0
 THRESHOLD     = 0.5270
-N_FOLDS       = 5   # 5-fold per thesis spec (not 10)
+N_FOLDS       = 10
 CHECKPOINT_EVERY = 5   # save intermediate checkpoint every N epochs
 
 XGB_PARAMS = dict(
@@ -237,7 +232,7 @@ def run_standard_cv(
     verbose: bool = True,
 ) -> pd.DataFrame:
     """
-    Run 5-fold StratifiedKFold CV and return per-fold metric DataFrame.
+    Run 10-fold StratifiedKFold CV and return per-fold metric DataFrame.
 
     Best fold (by fusion F1) model is saved to output_dir/models/.
 
