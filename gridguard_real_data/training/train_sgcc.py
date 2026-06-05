@@ -49,8 +49,8 @@ from preprocessing.sgcc_pipeline import compute_tabular_features
 #  Constants
 # -----------------------------------------------------------------------------
 SEED          = 42
-BATCH_SIZE    = 2048
-EPOCHS        = 25
+BATCH_SIZE    = 128
+EPOCHS        = 15
 LR            = 1e-4
 WEIGHT_DECAY  = 1e-4
 MAX_LR        = 2e-3

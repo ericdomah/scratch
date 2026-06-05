@@ -57,6 +57,16 @@ def set_global_seed(seed: int = SEED):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+    # Ensure exact reproducibility, as requested
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark     = False
+    
+    # CRITICAL FOR A100 GPUs: 
+    # Disable TensorFloat-32 (TF32) to ensure mathematical equivalence 
+    # to the original Tesla T4 results. Without this, A100s use TF32 
+    # implicitly, leading to minor precision drifts.
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
 
 
 # -----------------------------------------------------------------------------
