@@ -221,12 +221,13 @@ def preprocess_sgcc(
     if verbose:
         print(f"[SGCC] [OK] Samples after one-window-per-consumer: "
               f"{n_samples:,}  (expected ~40,000-42,000)")
-        if n_samples > 500_000:
-            raise RuntimeError(
-                f"STOP: {n_samples:,} samples produced — this is far too many. "
-                "A sliding window has been applied somewhere. "
-                "Fix the windowing logic before continuing."
+        if n_samples > 50000:
+            raise ValueError(
+                f"ERROR: {n_samples} samples found. "
+                f"Expected ~42000. Sliding window was applied. "
+                f"Fix Step 5 before any training."
             )
+        print(f"Sample count: {n_samples} — OK if 38000 to 44000")
 
     # -- Step 7 : per-consumer min-max normalisation --------------------------
     w_min = windows_kwh.min(axis=1, keepdims=True)
