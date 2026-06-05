@@ -66,15 +66,21 @@ def set_global_seed(seed: int = SEED):
 EXISTING_RESULTS = [
     {
         "Experiment":  "Synthetic TRNC -> TRNC (existing, Walk-Forward)",
-        "F1":    0.893, "AUROC": 0.943,
+        "F1":    0.893, "F1_SD": 0.007, "F1_95CI": "--", "AUROC": 0.943,
         "Precision": 0.911, "Recall": 0.875, "Brier": 0.042,
-        "Source": "Thesis (synthetic training)",
+        "TN": "--", "FP": "--", "FN": "--", "TP": "--"
+    },
+    {
+        "Experiment":  "Synthetic TRNC -> TRNC (existing, Std CV)",
+        "F1":    0.905, "F1_SD": "--", "F1_95CI": "--", "AUROC": 0.952,
+        "Precision": 0.911, "Recall": 0.898, "Brier": 0.042,
+        "TN": "--", "FP": "--", "FN": "--", "TP": "--"
     },
     {
         "Experiment":  "Synthetic TRNC -> SGCC cross-domain zero-shot (existing)",
-        "F1":    0.783, "AUROC": 0.871,
+        "F1":    0.783, "F1_SD": "--", "F1_95CI": "--", "AUROC": 0.871,
         "Precision": 0.842, "Recall": 0.732, "Brier": "--",
-        "Source": "Thesis (zero-shot)",
+        "TN": "--", "FP": "--", "FN": "--", "TP": "--"
     },
 ]
 
@@ -102,41 +108,69 @@ def build_final_table(
                      auroc_col: str, prec_col: str, rec_col: str,
                      brier_col: str = None) -> dict:
         if df is None:
-            return {"Experiment": name, "F1": "TBD", "AUROC": "TBD",
-                    "Precision": "TBD", "Recall": "TBD", "Brier": "TBD",
-                    "Source": "Phase 1"}
+            return {"Experiment": name, "F1": "TBD", "F1_SD": "TBD", "F1_95CI": "TBD",
+                    "AUROC": "TBD", "Precision": "TBD", "Recall": "TBD", "Brier": "TBD",
+                    "TN": "TBD", "FP": "TBD", "FN": "TBD", "TP": "TBD"}
         # Find summary row
         summary = df[df.apply(
             lambda r: str(r.get("Fold", r.get("Round", ""))).startswith("mean"),
             axis=1
         )]
+        f1_sd = "--"
+        f1_ci = "--"
+        tn = fp = fn = tp = "--"
+
         if summary.empty:
-            numeric = df[pd.to_numeric(
-                df.get("Fold", df.get("Round", pd.Series())),
-                errors="coerce"
-            ).notna()]
+            numeric = df[pd.to_numeric(df.get("Fold", df.get("Round", pd.Series())), errors="coerce").notna()]
             f1    = pd.to_numeric(numeric[f1_col],    errors="coerce").mean()
             auroc = pd.to_numeric(numeric[auroc_col], errors="coerce").mean()
             prec  = pd.to_numeric(numeric[prec_col],  errors="coerce").mean()
             rec   = pd.to_numeric(numeric[rec_col],   errors="coerce").mean()
             brier = (pd.to_numeric(numeric[brier_col], errors="coerce").mean()
                      if brier_col and brier_col in numeric.columns else "--")
+            # Try to get confusion matrix sums if they exist
+            if "TN" in numeric.columns: tn = pd.to_numeric(numeric["TN"], errors="coerce").sum()
+            if "FP" in numeric.columns: fp = pd.to_numeric(numeric["FP"], errors="coerce").sum()
+            if "FN" in numeric.columns: fn = pd.to_numeric(numeric["FN"], errors="coerce").sum()
+            if "TP" in numeric.columns: tp = pd.to_numeric(numeric["TP"], errors="coerce").sum()
         else:
             row   = summary.iloc[0]
-            f1    = _parse_mean(row.get(f1_col))
+            f1_raw = str(row.get(f1_col, "--"))
+            
+            if "+/-" in f1_raw:
+                parts = f1_raw.split("+/-")
+                f1 = parts[0].strip()
+                if len(parts) > 1:
+                    f1_sd = parts[1].split("[")[0].strip()
+                if len(parts) > 2:
+                    f1_ci = parts[2].replace("]", "").strip()
+            else:
+                f1 = _parse_mean(row.get(f1_col))
+
             auroc = _parse_mean(row.get(auroc_col))
             prec  = _parse_mean(row.get(prec_col,  "--"))
             rec   = _parse_mean(row.get(rec_col,   "--"))
             brier = _parse_mean(row.get(brier_col, "--")) if brier_col else "--"
 
+            numeric = df[pd.to_numeric(df.get("Fold", df.get("Round", pd.Series())), errors="coerce").notna()]
+            if "TN" in numeric.columns: tn = pd.to_numeric(numeric["TN"], errors="coerce").sum()
+            if "FP" in numeric.columns: fp = pd.to_numeric(numeric["FP"], errors="coerce").sum()
+            if "FN" in numeric.columns: fn = pd.to_numeric(numeric["FN"], errors="coerce").sum()
+            if "TP" in numeric.columns: tp = pd.to_numeric(numeric["TP"], errors="coerce").sum()
+
         return {
             "Experiment": name,
             "F1":        f1 if isinstance(f1, str) else round(float(f1), 4),
+            "F1_SD":     f1_sd,
+            "F1_95CI":   f1_ci,
             "AUROC":     auroc if isinstance(auroc, str) else round(float(auroc), 4),
             "Precision": prec if isinstance(prec, str) else round(float(prec), 4),
             "Recall":    rec if isinstance(rec, str) else round(float(rec), 4),
             "Brier":     brier if isinstance(brier, str) else round(float(brier), 4),
-            "Source":    "Phase 1 -- Real Data",
+            "TN":        tn if isinstance(tn, str) else int(tn),
+            "FP":        fp if isinstance(fp, str) else int(fp),
+            "FN":        fn if isinstance(fn, str) else int(fn),
+            "TP":        tp if isinstance(tp, str) else int(tp),
         }
 
     # Experiment 1 (standard CV)
@@ -159,18 +193,23 @@ def build_final_table(
         rows.append({
             "Experiment": "Real SGCC -> Synthetic TRNC (Reverse Transfer)",
             "F1":        round(float(r.get("F1",    0)), 4),
+            "F1_SD":     "--",
+            "F1_95CI":   "--",
             "AUROC":     round(float(r.get("AUROC", 0)), 4),
             "Precision": round(float(r.get("Precision", 0)), 4),
             "Recall":    round(float(r.get("Recall", 0)), 4),
             "Brier":     round(float(r.get("Brier", 0)), 4),
-            "Source":    "Phase 1 -- Real Data",
+            "TN":        int(r.get("TN", 0)) if "TN" in r else "--",
+            "FP":        int(r.get("FP", 0)) if "FP" in r else "--",
+            "FN":        int(r.get("FN", 0)) if "FN" in r else "--",
+            "TP":        int(r.get("TP", 0)) if "TP" in r else "--",
         })
     else:
         rows.append({
             "Experiment": "Real SGCC -> Synthetic TRNC (Reverse Transfer)",
-            "F1": "SKIPPED", "AUROC": "SKIPPED",
+            "F1": "SKIPPED", "F1_SD": "SKIPPED", "F1_95CI": "SKIPPED", "AUROC": "SKIPPED",
             "Precision": "SKIPPED", "Recall": "SKIPPED", "Brier": "SKIPPED",
-            "Source": "Skipped (no TRNC holdout .pt found)",
+            "TN": "SKIPPED", "FP": "SKIPPED", "FN": "SKIPPED", "TP": "SKIPPED",
         })
 
     # Experiment 4 (TDD2022 cross-domain)
@@ -179,22 +218,28 @@ def build_final_table(
         rows.append({
             "Experiment": "Real SGCC -> TDD2022 (Cross-Domain Zero-Shot)",
             "F1":        round(float(r.get("F1",    0)), 4),
+            "F1_SD":     "--",
+            "F1_95CI":   "--",
             "AUROC":     round(float(r.get("AUROC", 0)), 4),
             "Precision": round(float(r.get("Precision", 0)), 4),
             "Recall":    round(float(r.get("Recall", 0)), 4),
             "Brier":     round(float(r.get("Brier", 0)), 4),
-            "Source":    "Phase 1 -- Real Data",
+            "TN":        int(r.get("TN", 0)) if "TN" in r else "--",
+            "FP":        int(r.get("FP", 0)) if "FP" in r else "--",
+            "FN":        int(r.get("FN", 0)) if "FN" in r else "--",
+            "TP":        int(r.get("TP", 0)) if "TP" in r else "--",
         })
     else:
         rows.append({
             "Experiment": "Real SGCC -> TDD2022 (Cross-Domain Zero-Shot)",
-            "F1": "SKIPPED", "AUROC": "SKIPPED",
+            "F1": "SKIPPED", "F1_SD": "SKIPPED", "F1_95CI": "SKIPPED", "AUROC": "SKIPPED",
             "Precision": "SKIPPED", "Recall": "SKIPPED", "Brier": "SKIPPED",
-            "Source": "Skipped (no TDD2022 CSV found)",
+            "TN": "SKIPPED", "FP": "SKIPPED", "FN": "SKIPPED", "TP": "SKIPPED",
         })
 
     table = pd.DataFrame(rows, columns=[
-        "Experiment", "F1", "AUROC", "Precision", "Recall", "Brier", "Source"
+        "Experiment", "F1", "F1_SD", "F1_95CI", "AUROC", "Precision",
+        "Recall", "Brier", "TN", "FP", "FN", "TP"
     ])
     return table
 
