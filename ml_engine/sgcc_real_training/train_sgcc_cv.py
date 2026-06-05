@@ -16,7 +16,7 @@ from sklearn.metrics import (
     f1_score, precision_score, recall_score,
     roc_auc_score, brier_score_loss, confusion_matrix,
 )
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import OneCycleLR
 from torch.utils.data import DataLoader, TensorDataset
@@ -124,6 +124,9 @@ def train_one_fold(
 
         try:
             val_auroc = roc_auc_score(y_val, val_probs)
+            import math
+            if math.isnan(val_auroc):
+                val_auroc = 0.5
         except ValueError:
             val_auroc = 0.5
 
@@ -258,10 +261,11 @@ def run_standard_cv(
         X_tv, y_tv = X[train_val_idx], y[train_val_idx]
         X_test, y_test = X[test_idx], y[test_idx]
 
-        # 15% of train+val as validation
-        n_val = max(1, int(0.15 * len(y_tv)))
-        X_train, y_train = X_tv[:-n_val], y_tv[:-n_val]
-        X_val,   y_val   = X_tv[-n_val:],  y_tv[-n_val:]
+        # 15% of train+val as stratified validation
+        sss = StratifiedShuffleSplit(n_splits=1, test_size=0.15, random_state=42)
+        train_idx_inner, val_idx_inner = next(sss.split(X_tv, y_tv.astype(int)))
+        X_train, y_train = X_tv[train_idx_inner], y_tv[train_idx_inner]
+        X_val,   y_val   = X_tv[val_idx_inner],   y_tv[val_idx_inner]
 
         pos_weight = float((y_train == 0).sum()) / max(1.0, float((y_train == 1).sum()))
         print(f"  Train={len(y_train):,}  Val={len(y_val):,}  "

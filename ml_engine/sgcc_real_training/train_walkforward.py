@@ -83,6 +83,9 @@ def _train_dl(model, X_train, y_train, X_val, y_val, epochs, device, pos_weight)
             val_probs = model(X_vl_t.to(device)).squeeze().cpu().numpy()
         try:
             val_auroc = roc_auc_score(y_val, val_probs)
+            import math
+            if math.isnan(val_auroc):
+                val_auroc = 0.5
         except ValueError:
             val_auroc = 0.5
 
