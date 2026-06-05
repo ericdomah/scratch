@@ -104,12 +104,10 @@ def train_one_fold(
                 torch.full_like(y_b, 0.92),
                 torch.full_like(y_b, 0.08),
             )
-            weight  = torch.where(
-                y_b == 1,
-                torch.full_like(y_b, float(pos_weight)),
-                torch.ones_like(y_b),
-            )
-            loss = (alpha_t * focal_w * bce * weight).mean()
+            # alpha=0.92 already provides ~11.5x theft weighting.
+            # pos_weight is NOT applied here to avoid double-weighting.
+            # pos_weight is used only in XGBoost (scale_pos_weight).
+            loss = (alpha_t * focal_w * bce).mean()
 
             optimizer.zero_grad()
             loss.backward()

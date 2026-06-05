@@ -67,10 +67,8 @@ def _train_dl(model, X_train, y_train, X_val, y_val, epochs, device, pos_weight)
             alpha_t = torch.where(y_b == 1,
                                   torch.full_like(y_b, 0.92),
                                   torch.full_like(y_b, 0.08))
-            weight  = torch.where(y_b == 1,
-                                  torch.full_like(y_b, float(pos_weight)),
-                                  torch.ones_like(y_b))
-            loss = (alpha_t * focal_w * bce * weight).mean()
+            # alpha=0.92 provides ~11.5x theft weighting — pos_weight not applied here.
+            loss = (alpha_t * focal_w * bce).mean()
 
             optim.zero_grad()
             loss.backward()
@@ -155,6 +153,18 @@ def run_walkforward(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n      = len(y)
     print(f"\n[Exp2] Walk-forward | device={device} | N={n:,} | epochs={epochs}")
+
+    # Shuffle with fixed seed so theft consumers are distributed across all rounds.
+    # CONS_NO ordering clusters theft in one region — shuffling is necessary for
+    # valid temporal splits. Seed is fixed for reproducibility.
+    rng       = np.random.default_rng(42)
+    perm      = rng.permutation(n)
+    X, y      = X[perm], y[perm]
+    print(f"[Exp2] Consumers shuffled (seed=42) — theft distribution across rounds:")
+    for i, (tr_f, te_f) in enumerate(WF_SPLITS):
+        te_s = int(n * tr_f); te_e = int(n * te_f)
+        n_th = int((y[te_s:te_e] == 1).sum())
+        print(f"  Round {i+1}: test={te_s}:{te_e}  theft_in_test={n_th}")
 
     rows = []
 
