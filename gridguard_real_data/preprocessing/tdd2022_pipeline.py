@@ -313,45 +313,78 @@ def preprocess_tdd2022(
     w_rng = np.where(w_max - w_min > 0, w_max - w_min, 1.0)
     weekly = (weekly_raw - w_min) / w_rng   # (N, n_full_weeks)
 
-    # -- Step 4 : extract LAST 26 weeks per consumer ---------------------------
-    # DO NOT use sliding windows. Just take the last 26 weeks per consumer.
-    if verbose:
-        print(f"[TDD2022] Extracting last {window_size} weeks per consumer...")
+    # -- Step 4 : SLIDING WINDOWS (stride=1, window=26 weeks) ------------------
+    # TDD2022 has injected theft throughout the full timeline, so the theft
+    # label is valid for EVERY 26-week window across the consumer's history.
+    # Using sliding windows dramatically increases sample count from ~113 to
+    # several thousand, making cross-domain evaluation meaningful.
+    stride      = 1
+    n_windows_per_consumer = (n_full_weeks - window_size) // stride + 1
 
-    X_kwh = weekly[:, -window_size:]
-    y_arr = labels.astype(np.float32)
-    cons_idx_arr = np.arange(n_consumers, dtype=np.int32)
-    
+    if verbose:
+        print(f"[TDD2022] Applying sliding windows: "
+              f"stride={stride}, window={window_size}, "
+              f"windows_per_consumer={n_windows_per_consumer}")
+
+    all_X_kwh    = []
+    all_y        = []
+    all_cons_idx = []
+    all_win_start= []
+
+    for i in range(n_consumers):
+        for start in range(0, n_full_weeks - window_size + 1, stride):
+            all_X_kwh.append(weekly[i, start:start + window_size])
+            all_y.append(labels[i])
+            all_cons_idx.append(i)
+            all_win_start.append(start)
+
+    X_kwh        = np.array(all_X_kwh,    dtype=np.float32)   # (N_total, 26)
+    y_arr        = np.array(all_y,         dtype=np.float32)   # (N_total,)
+    cons_idx_arr = np.array(all_cons_idx,  dtype=np.int32)
+    win_start_arr= np.array(all_win_start, dtype=np.int32)
+
+    n_total = len(y_arr)
+
     # -- Step 6 : compute GLI (same definition as SGCC) -----------------------
-    # Treat all consumers as one substation
     substation_load = X_kwh.sum(axis=0)            # (26,)
     gli_denom       = substation_load.max()
     gli             = substation_load / (gli_denom if gli_denom > 0 else 1.0)
-    X_gli           = np.tile(gli, (n_consumers, 1))
+    X_gli           = np.tile(gli, (n_total, 1))
 
-    # -- Step 7 : stack into (N, 26, 2) ---------------------------------------
+    # -- Step 7 : stack into (N_total, 26, 2) ---------------------------------
     X = np.stack([X_kwh, X_gli], axis=2)
 
     if verbose:
-        print(f"\n==============================")
-        print(f"TDD2022 DATASET SUMMARY")
-        print(f"Total samples      : {len(y_arr)}")
-        print(f"Normal (FLAG=0)    : {int((y_arr == 0).sum())}")
-        print(f"Theft  (FLAG=1)    : {int((y_arr == 1).sum())}")
-        print(f"Theft prevalence   : {y_arr.mean():.2%}")
-        print(f"X tensor shape     : {X.shape}")
-        print(f"y tensor shape     : {y_arr.shape}")
-        print(f"==============================\n")
+        print(f"\n=============================")
+        print(f"  TDD2022 PREPROCESSING SUMMARY (sliding windows)")
+        print(f"=============================")
+        print(f"  Consumers           : {n_consumers}")
+        print(f"  Windows per consumer: {n_windows_per_consumer}")
+        print(f"  Total samples       : {n_total:,}")
+        print(f"  Normal (FLAG=0)     : {int((y_arr == 0).sum()):,}")
+        print(f"  Theft  (FLAG=1)     : {int((y_arr == 1).sum()):,}")
+        print(f"  Theft prevalence    : {y_arr.mean():.2%}")
+        print(f"  X tensor shape      : {X.shape}")
+        print(f"=============================")
+        # Label mapping printout for thesis clarity
+        unique_labels = np.unique(labels)
+        print(f"\n  Label mapping:")
+        for lbl in unique_labels:
+            count = (labels == lbl).sum()
+            print(f"    FLAG={int(lbl)} -> {'Theft' if lbl == 1 else 'Normal'} "
+                  f"({count} consumers, "
+                  f"{count * n_windows_per_consumer:,} windows)")
+        print()
 
     return (
         torch.FloatTensor(X),
         torch.FloatTensor(y_arr),
         {
             "consumer_idx":   cons_idx_arr,
-            "win_start_week": np.zeros(n_consumers, dtype=np.int32),
+            "win_start_week": win_start_arr,
             "n_consumers":    n_consumers,
             "n_full_weeks":   n_full_weeks,
-            "n_win_per_cons": 1,
+            "n_win_per_cons": n_windows_per_consumer,
             "window_size":    window_size,
             "labels":         labels,
             "weekly":         weekly,
