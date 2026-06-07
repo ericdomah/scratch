@@ -222,7 +222,6 @@ class ImbalanceHandler:
             k_neighbors=int(self.config["k_neighbors"]),
             sampling_strategy=self.config["sampling_strategy"],
             random_state=int(self.config["random_state"]),
-            n_jobs=int(self.config["n_jobs"]),
         )
         X_res, y_res = sampler.fit_resample(X, y)
         logger.info(
@@ -250,7 +249,6 @@ class ImbalanceHandler:
             k_neighbors=int(self.config["k_neighbors"]),
             sampling_strategy=self.config["sampling_strategy"],
             random_state=int(self.config["random_state"]),
-            n_jobs=int(self.config["n_jobs"]),
         )
         X_res, y_res = sampler.fit_resample(X, y)
         logger.info(
@@ -279,7 +277,6 @@ class ImbalanceHandler:
             k_neighbors=int(self.config["k_neighbors"]),
             sampling_strategy=self.config["sampling_strategy"],
             random_state=int(self.config["random_state"]),
-            n_jobs=int(self.config["n_jobs"]),
         )
         sampler = SMOTEENN(
             smote=smote,
@@ -313,7 +310,6 @@ class ImbalanceHandler:
             k_neighbors=int(self.config["k_neighbors"]),
             sampling_strategy=self.config["sampling_strategy"],
             random_state=int(self.config["random_state"]),
-            n_jobs=int(self.config["n_jobs"]),
         )
         sampler = SMOTETomek(
             smote=smote,
