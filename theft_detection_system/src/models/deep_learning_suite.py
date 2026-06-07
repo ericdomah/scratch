@@ -177,14 +177,14 @@ class DeepLearningModelSuite:
         return model
 
     def evaluate_single(
-        self, name: str, X_test: np.ndarray, y_test: np.ndarray, threshold: float = 0.5
+        self, name: str, X_test: np.ndarray, y_test: np.ndarray, threshold: float = 0.5, batch_size: int = 32
     ) -> Dict[str, Any]:
         if name not in self.trained_models:
             raise KeyError(f"Model '{name}' not trained.")
         
         model = self.trained_models[name]
         model.eval()
-        test_loader = self._prepare_dataloader(X_test, y_test, batch_size=256, is_train=False)
+        test_loader = self._prepare_dataloader(X_test, y_test, batch_size=batch_size, is_train=False)
 
         all_probs = []
         all_targets = []
