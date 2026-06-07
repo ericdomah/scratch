@@ -202,6 +202,36 @@ class ImbalanceHandler:
     # Private resampling implementations
     # ------------------------------------------------------------------
 
+    def _build_kwargs(self, cls: Any) -> Dict[str, Any]:
+        """
+        Safely construct kwargs for a class based on its signature.
+        Maps 'k_neighbors' to 'n_neighbors' if the class expects the latter.
+        """
+        import inspect
+        sig = inspect.signature(cls.__init__)
+        kwargs = {}
+        
+        # Handle k_neighbors / n_neighbors mapping
+        k_neighbors = int(self.config.get("k_neighbors", 5))
+        if "k_neighbors" in sig.parameters:
+            kwargs["k_neighbors"] = k_neighbors
+        elif "n_neighbors" in sig.parameters:
+            kwargs["n_neighbors"] = k_neighbors
+
+        # Handle random_state
+        if "random_state" in sig.parameters:
+            kwargs["random_state"] = int(self.config.get("random_state", 42))
+
+        # Handle sampling_strategy
+        if "sampling_strategy" in sig.parameters:
+            kwargs["sampling_strategy"] = self.config.get("sampling_strategy", "auto")
+
+        # Handle n_jobs
+        if "n_jobs" in sig.parameters:
+            kwargs["n_jobs"] = int(self.config.get("n_jobs", -1))
+            
+        return kwargs
+
     def _apply_smote(
         self, X: np.ndarray, y: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -218,11 +248,8 @@ class ImbalanceHandler:
             "Applying SMOTE (k_neighbors=%d, sampling_strategy=%s) …",
             self.config["k_neighbors"], self.config["sampling_strategy"],
         )
-        sampler = SMOTE(
-            k_neighbors=int(self.config["k_neighbors"]),
-            sampling_strategy=self.config["sampling_strategy"],
-            random_state=int(self.config["random_state"]),
-        )
+        kwargs = self._build_kwargs(SMOTE)
+        sampler = SMOTE(**kwargs)
         X_res, y_res = sampler.fit_resample(X, y)
         logger.info(
             "SMOTE complete: %d → %d samples.", len(y), len(y_res)
@@ -245,11 +272,8 @@ class ImbalanceHandler:
             "Applying BorderlineSMOTE (k_neighbors=%d, sampling_strategy=%s) …",
             self.config["k_neighbors"], self.config["sampling_strategy"],
         )
-        sampler = BorderlineSMOTE(
-            k_neighbors=int(self.config["k_neighbors"]),
-            sampling_strategy=self.config["sampling_strategy"],
-            random_state=int(self.config["random_state"]),
-        )
+        kwargs = self._build_kwargs(BorderlineSMOTE)
+        sampler = BorderlineSMOTE(**kwargs)
         X_res, y_res = sampler.fit_resample(X, y)
         logger.info(
             "BorderlineSMOTE complete: %d → %d samples.", len(y), len(y_res)
@@ -273,15 +297,12 @@ class ImbalanceHandler:
             "Applying SMOTEENN (k_neighbors=%d, sampling_strategy=%s) …",
             self.config["k_neighbors"], self.config["sampling_strategy"],
         )
-        smote = SMOTE(
-            k_neighbors=int(self.config["k_neighbors"]),
-            sampling_strategy=self.config["sampling_strategy"],
-            random_state=int(self.config["random_state"]),
-        )
-        sampler = SMOTEENN(
-            smote=smote,
-            random_state=int(self.config["random_state"]),
-        )
+        smote_kwargs = self._build_kwargs(SMOTE)
+        smote = SMOTE(**smote_kwargs)
+        
+        sampler_kwargs = self._build_kwargs(SMOTEENN)
+        sampler_kwargs["smote"] = smote
+        sampler = SMOTEENN(**sampler_kwargs)
         X_res, y_res = sampler.fit_resample(X, y)
         logger.info(
             "SMOTEENN complete: %d → %d samples.", len(y), len(y_res)
@@ -305,15 +326,12 @@ class ImbalanceHandler:
             "Applying SMOTETomek (k_neighbors=%d, sampling_strategy=%s) …",
             self.config["k_neighbors"], self.config["sampling_strategy"],
         )
-        smote = SMOTE(
-            k_neighbors=int(self.config["k_neighbors"]),
-            sampling_strategy=self.config["sampling_strategy"],
-            random_state=int(self.config["random_state"]),
-        )
-        sampler = SMOTETomek(
-            smote=smote,
-            random_state=int(self.config["random_state"]),
-        )
+        smote_kwargs = self._build_kwargs(SMOTE)
+        smote = SMOTE(**smote_kwargs)
+        
+        sampler_kwargs = self._build_kwargs(SMOTETomek)
+        sampler_kwargs["smote"] = smote
+        sampler = SMOTETomek(**sampler_kwargs)
         X_res, y_res = sampler.fit_resample(X, y)
         logger.info(
             "SMOTETomek complete: %d → %d samples.", len(y), len(y_res)
@@ -336,12 +354,8 @@ class ImbalanceHandler:
             "Applying ADASYN (n_neighbors=%d, sampling_strategy=%s) …",
             self.config["k_neighbors"], self.config["sampling_strategy"],
         )
-        sampler = ADASYN(
-            n_neighbors=int(self.config["k_neighbors"]),
-            sampling_strategy=self.config["sampling_strategy"],
-            random_state=int(self.config["random_state"]),
-            n_jobs=int(self.config["n_jobs"]),
-        )
+        kwargs = self._build_kwargs(ADASYN)
+        sampler = ADASYN(**kwargs)
         try:
             X_res, y_res = sampler.fit_resample(X, y)
         except ValueError as exc:
@@ -371,10 +385,8 @@ class ImbalanceHandler:
             "Applying RandomOverSampler (sampling_strategy=%s) …",
             self.config["sampling_strategy"],
         )
-        sampler = RandomOverSampler(
-            sampling_strategy=self.config["sampling_strategy"],
-            random_state=int(self.config["random_state"]),
-        )
+        kwargs = self._build_kwargs(RandomOverSampler)
+        sampler = RandomOverSampler(**kwargs)
         X_res, y_res = sampler.fit_resample(X, y)
         logger.info(
             "RandomOverSampler complete: %d → %d samples.", len(y), len(y_res)
@@ -397,10 +409,8 @@ class ImbalanceHandler:
             "Applying RandomUnderSampler (sampling_strategy=%s) …",
             self.config["sampling_strategy"],
         )
-        sampler = RandomUnderSampler(
-            sampling_strategy=self.config["sampling_strategy"],
-            random_state=int(self.config["random_state"]),
-        )
+        kwargs = self._build_kwargs(RandomUnderSampler)
+        sampler = RandomUnderSampler(**kwargs)
         X_res, y_res = sampler.fit_resample(X, y)
         logger.info(
             "RandomUnderSampler complete: %d → %d samples.", len(y), len(y_res)
@@ -527,43 +537,35 @@ class ImbalanceHandler:
     def print_class_distribution(
         self,
         y: np.ndarray,
-        label: str = "Before",
+        label: str = "Before resampling",
     ) -> None:
         """
         Print class counts and class ratios for the given label vector.
-
-        Parameters
-        ----------
-        y : np.ndarray, shape (n_samples,)
-            Binary label vector.
-        label : str
-            Descriptive prefix printed in the header.
-
-        Returns
-        -------
-        None
         """
         y = np.asarray(y, dtype=np.int64)
         total = len(y)
         classes, counts = np.unique(y, return_counts=True)
+        
+        counts_dict = dict(zip(classes, counts))
+        c0 = counts_dict.get(0, 0)
+        c1 = counts_dict.get(1, 0)
+        p0 = (c0 / total * 100) if total > 0 else 0
+        p1 = (c1 / total * 100) if total > 0 else 0
 
-        print(f"\n{'=' * 50}")
-        print(f"  Class Distribution  [{label}]")
-        print(f"{'=' * 50}")
-        print(f"  Total samples : {total}")
-        for cls, cnt in zip(classes, counts):
-            ratio = cnt / total if total > 0 else 0.0
-            class_name = "Normal (0)" if int(cls) == 0 else "Theft  (1)"
-            print(f"  {class_name} : {cnt:>7d}  ({ratio:.2%})")
-        print(f"{'=' * 50}\n")
+        msg = (
+            f"\n==================================================\n"
+            f"  Class distribution {label.lower().replace('resampling', '').strip()}:\n"
+            f"==================================================\n"
+            f"  Total samples : {total}\n"
+            f"  Normal (0) : {c0:7d}  ({p0:5.2f}%)\n"
+            f"  Theft  (1) : {c1:7d}  ({p1:5.2f}%)\n"
+            f"==================================================\n"
+        )
+        print(msg)
 
         logger.info(
-            "[%s] Total=%d  %s",
-            label, total,
-            "  ".join(
-                f"class {int(c)}={cnt}({cnt/total:.2%})"
-                for c, cnt in zip(classes, counts)
-            ),
+            "[%s] Total=%d  class 0=%d(%.2f%%)  class 1=%d(%.2f%%)",
+            label, total, c0, p0, c1, p1
         )
 
     # ------------------------------------------------------------------
