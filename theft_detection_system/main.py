@@ -172,7 +172,12 @@ def run_data_pipeline(
     # Feature Engineering
     if feature_engineering:
         logger.info("Running feature engineering...")
-        fe = FeatureEngineer(config=fe_cfg)
+        fe = FeatureEngineer(
+            rolling_windows=fe_cfg.get("rolling_windows", [7, 14, 30]),
+            enable_fft=fe_cfg.get("frequency_features", True),
+            fft_top_k=fe_cfg.get("fft_top_k", 10),
+            random_state=data_cfg.get("random_state", 42)
+        )
         X_train_fe = fe.fit_transform(X_train)
         X_val_fe   = fe.transform(X_val)
         X_test_fe  = fe.transform(X_test)
