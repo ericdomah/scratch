@@ -142,7 +142,7 @@ def run_data_pipeline(
     cache_path = data_cfg.get("cache_path")
     if data_cfg.get("cache_processed") and cache_path and os.path.isfile(cache_path):
         logger.info(f"Loading cached processed data from {cache_path}")
-        loader.load_processed(cache_path)
+        loader = DataLoader.load_processed(cache_path)
     else:
         loader.load_data(data_cfg["path"])
         loader.validate_data()
