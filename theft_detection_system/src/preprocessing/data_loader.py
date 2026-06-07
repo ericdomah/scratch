@@ -196,13 +196,14 @@ class DataLoader:
             .astype(int)
         )
 
+        self._is_loaded = True
+
         # Coerce feature columns to float
         feat_cols = self.get_feature_columns()
         self._df[feat_cols] = self._df[feat_cols].apply(
             pd.to_numeric, errors="coerce"
         )
 
-        self._is_loaded = True
         logger.info("Data loaded successfully.  Shape: %s", self._df.shape)
         return self
 
