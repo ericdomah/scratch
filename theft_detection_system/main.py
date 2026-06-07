@@ -30,7 +30,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from src.preprocessing.data_loader import SGCCDataLoader
+from src.preprocessing.data_loader import DataLoader
 from src.preprocessing.feature_engineering import FeatureEngineer
 from src.preprocessing.imbalance_handler import ImbalanceHandler
 from src.models.baseline_models import BaselineModelSuite
@@ -136,7 +136,7 @@ def run_data_pipeline(
     logger.info("=" * 60)
 
     # Load and preprocess
-    loader = SGCCDataLoader(
+    loader = DataLoader(
         data_path      = data_cfg["path"],
         target_column  = data_cfg.get("target_column", "FLAG"),
         random_state   = data_cfg.get("random_state", 42),
