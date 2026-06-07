@@ -136,11 +136,7 @@ def run_data_pipeline(
     logger.info("=" * 60)
 
     # Load and preprocess
-    loader = DataLoader(
-        data_path      = data_cfg["path"],
-        target_column  = data_cfg.get("target_column", "FLAG"),
-        random_state   = data_cfg.get("random_state", 42),
-    )
+    loader = DataLoader(random_state=data_cfg.get("random_state", 42))
 
     # Check cache
     cache_path = data_cfg.get("cache_path")
@@ -148,7 +144,7 @@ def run_data_pipeline(
         logger.info(f"Loading cached processed data from {cache_path}")
         loader.load_processed(cache_path)
     else:
-        loader.load_data()
+        loader.load_data(data_cfg["path"])
         loader.validate_data()
         if prep_cfg.get("remove_duplicates", True):
             loader.remove_duplicates()
