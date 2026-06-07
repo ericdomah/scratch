@@ -360,12 +360,18 @@ class BaselineModelSuite:
 
         # 8. SVM
         svm_params = _p("svm")
-        # Extract params for LinearSVC, then wrap
-        if "probability" in svm_params:
-            del svm_params["probability"]
-        base_svm = LinearSVC(**svm_params)
+        
+        # Safely extract params supported by LinearSVC
+        import inspect
+        sig = inspect.signature(LinearSVC.__init__)
+        safe_svm_params = {
+            k: v for k, v in svm_params.items() 
+            if k in sig.parameters
+        }
+        
+        base_svm = LinearSVC(**safe_svm_params)
         models["svm"] = CalibratedClassifierCV(base_svm, method="sigmoid", cv=5)
-        logger.debug("Built LinearSVC wrapped in CalibratedClassifierCV with params: %s", svm_params)
+        logger.debug("Built LinearSVC wrapped in CalibratedClassifierCV with params: %s", safe_svm_params)
 
         logger.info("All %d models built successfully.", len(models))
         return models
