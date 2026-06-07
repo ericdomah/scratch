@@ -281,7 +281,6 @@ class ImbalanceHandler:
         sampler = SMOTEENN(
             smote=smote,
             random_state=int(self.config["random_state"]),
-            n_jobs=int(self.config["n_jobs"]),
         )
         X_res, y_res = sampler.fit_resample(X, y)
         logger.info(
@@ -314,7 +313,6 @@ class ImbalanceHandler:
         sampler = SMOTETomek(
             smote=smote,
             random_state=int(self.config["random_state"]),
-            n_jobs=int(self.config["n_jobs"]),
         )
         X_res, y_res = sampler.fit_resample(X, y)
         logger.info(
