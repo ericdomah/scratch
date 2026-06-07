@@ -51,7 +51,7 @@ if not logger.handlers:
 # Constants
 # ---------------------------------------------------------------------------
 _VALID_METHODS = frozenset(
-    {"weighted_loss", "smote", "adasyn", "oversample", "undersample", "focal_loss", "none"}
+    {"weighted_loss", "smote", "borderlinesmote", "smoteenn", "smotetomek", "adasyn", "oversample", "undersample", "focal_loss", "none"}
 )
 
 
@@ -66,7 +66,8 @@ class ImbalanceHandler:
     ----------
     method : str
         Imbalance strategy.  Must be one of:
-        ``"weighted_loss"``, ``"smote"``, ``"adasyn"``, ``"oversample"``,
+        ``"weighted_loss"``, ``"smote"``, ``"borderlinesmote"``, ``"smoteenn"``,
+        ``"smotetomek"``, ``"adasyn"``, ``"oversample"``,
         ``"undersample"``, ``"focal_loss"``, ``"none"``.
     config : dict, optional
         Strategy-specific hyper-parameters.  Recognised keys:
@@ -178,6 +179,12 @@ class ImbalanceHandler:
 
         if self.method == "smote":
             X_res, y_res = self._apply_smote(X_train, y_train)
+        elif self.method == "borderlinesmote":
+            X_res, y_res = self._apply_borderline_smote(X_train, y_train)
+        elif self.method == "smoteenn":
+            X_res, y_res = self._apply_smoteenn(X_train, y_train)
+        elif self.method == "smotetomek":
+            X_res, y_res = self._apply_smotetomek(X_train, y_train)
         elif self.method == "adasyn":
             X_res, y_res = self._apply_adasyn(X_train, y_train)
         elif self.method == "oversample":
@@ -220,6 +227,102 @@ class ImbalanceHandler:
         X_res, y_res = sampler.fit_resample(X, y)
         logger.info(
             "SMOTE complete: %d → %d samples.", len(y), len(y_res)
+        )
+        return X_res.astype(np.float32), y_res.astype(np.int64)
+
+    def _apply_borderline_smote(
+        self, X: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Apply BorderlineSMOTE over-sampling."""
+        try:
+            from imblearn.over_sampling import BorderlineSMOTE
+        except ImportError as exc:
+            raise RuntimeError(
+                "imblearn is required for BorderlineSMOTE.  "
+                "Install it with: pip install imbalanced-learn"
+            ) from exc
+
+        logger.info(
+            "Applying BorderlineSMOTE (k_neighbors=%d, sampling_strategy=%s) …",
+            self.config["k_neighbors"], self.config["sampling_strategy"],
+        )
+        sampler = BorderlineSMOTE(
+            k_neighbors=int(self.config["k_neighbors"]),
+            sampling_strategy=self.config["sampling_strategy"],
+            random_state=int(self.config["random_state"]),
+            n_jobs=int(self.config["n_jobs"]),
+        )
+        X_res, y_res = sampler.fit_resample(X, y)
+        logger.info(
+            "BorderlineSMOTE complete: %d → %d samples.", len(y), len(y_res)
+        )
+        return X_res.astype(np.float32), y_res.astype(np.int64)
+
+    def _apply_smoteenn(
+        self, X: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Apply SMOTEENN over- and under-sampling."""
+        try:
+            from imblearn.combine import SMOTEENN
+            from imblearn.over_sampling import SMOTE
+        except ImportError as exc:
+            raise RuntimeError(
+                "imblearn is required for SMOTEENN.  "
+                "Install it with: pip install imbalanced-learn"
+            ) from exc
+
+        logger.info(
+            "Applying SMOTEENN (k_neighbors=%d, sampling_strategy=%s) …",
+            self.config["k_neighbors"], self.config["sampling_strategy"],
+        )
+        smote = SMOTE(
+            k_neighbors=int(self.config["k_neighbors"]),
+            sampling_strategy=self.config["sampling_strategy"],
+            random_state=int(self.config["random_state"]),
+            n_jobs=int(self.config["n_jobs"]),
+        )
+        sampler = SMOTEENN(
+            smote=smote,
+            random_state=int(self.config["random_state"]),
+            n_jobs=int(self.config["n_jobs"]),
+        )
+        X_res, y_res = sampler.fit_resample(X, y)
+        logger.info(
+            "SMOTEENN complete: %d → %d samples.", len(y), len(y_res)
+        )
+        return X_res.astype(np.float32), y_res.astype(np.int64)
+
+    def _apply_smotetomek(
+        self, X: np.ndarray, y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Apply SMOTETomek over- and under-sampling."""
+        try:
+            from imblearn.combine import SMOTETomek
+            from imblearn.over_sampling import SMOTE
+        except ImportError as exc:
+            raise RuntimeError(
+                "imblearn is required for SMOTETomek.  "
+                "Install it with: pip install imbalanced-learn"
+            ) from exc
+
+        logger.info(
+            "Applying SMOTETomek (k_neighbors=%d, sampling_strategy=%s) …",
+            self.config["k_neighbors"], self.config["sampling_strategy"],
+        )
+        smote = SMOTE(
+            k_neighbors=int(self.config["k_neighbors"]),
+            sampling_strategy=self.config["sampling_strategy"],
+            random_state=int(self.config["random_state"]),
+            n_jobs=int(self.config["n_jobs"]),
+        )
+        sampler = SMOTETomek(
+            smote=smote,
+            random_state=int(self.config["random_state"]),
+            n_jobs=int(self.config["n_jobs"]),
+        )
+        X_res, y_res = sampler.fit_resample(X, y)
+        logger.info(
+            "SMOTETomek complete: %d → %d samples.", len(y), len(y_res)
         )
         return X_res.astype(np.float32), y_res.astype(np.int64)
 

@@ -187,7 +187,7 @@ class Evaluator:
             raise ValueError(f"metric must be one of {_supported}, got '{metric}'.")
 
         best_thr, best_score = 0.5, -np.inf
-        thresholds = np.linspace(0.01, 0.99, 199)
+        thresholds = np.arange(0.05, 0.96, 0.05)
 
         for thr in thresholds:
             y_pred = (y_prob >= thr).astype(int)
@@ -473,7 +473,7 @@ class Evaluator:
 
         df = (
             pd.DataFrame(rows, columns=_COLUMNS)
-            .sort_values(["f1", "roc_auc"], ascending=False)
+            .sort_values(["f1", "roc_auc", "pr_auc"], ascending=False)
             .reset_index(drop=True)
         )
         logger.info("Comparison table generated | %d models.", len(df))

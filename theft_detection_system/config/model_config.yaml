@@ -1,7 +1,7 @@
 baseline:
   logistic_regression:
     C: 1.0
-    max_iter: 1000
+    max_iter: 5000
     class_weight: balanced
     solver: lbfgs
     random_state: 42
@@ -29,7 +29,9 @@ baseline:
     learning_rate: 0.05
     subsample: 0.8
     colsample_bytree: 0.8
-    eval_metric: logloss
+    objective: binary:logistic
+    eval_metric: aucpr
+    tree_method: hist
     random_state: 42
   lightgbm:
     n_estimators: 500
@@ -47,9 +49,9 @@ baseline:
     verbose: 0
   svm:
     C: 1.0
-    kernel: rbf
+    loss: squared_hinge
+    dual: false
     class_weight: balanced
-    probability: true
     random_state: 42
 
 deep_learning:
@@ -118,3 +120,12 @@ ensemble:
     weights: null  # Equal weights if null
   weighted:
     weights: null  # Learned automatically
+
+feature_selection:
+  methods: ["mutual_info", "select_k_best", "rfe", "xgboost"]
+  k_features: [20, 50, 100, "all"]
+
+optuna_tuning:
+  n_trials: 100
+  metric: f1
+  direction: maximize

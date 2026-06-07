@@ -638,6 +638,153 @@ class FeatureEngineer:
         return feats.astype(np.float32)
 
     # ------------------------------------------------------------------
+    # 9. Advanced / New Features
+    # ------------------------------------------------------------------
+
+    def compute_volatility_cv(self, X: np.ndarray) -> np.ndarray:
+        """
+        Compute volatility (std of daily changes) and Coefficient of Variation (CV).
+
+        Features:
+          * volatility: std of first differences
+          * cv: std / mean
+
+        Returns
+        -------
+        np.ndarray, shape (n_samples, 2)
+        """
+        X = self._validate_input(X)
+        n_samples, _ = X.shape
+        logger.debug("Computing volatility and CV …")
+
+        diffs = np.diff(np.nan_to_num(X, nan=0.0), axis=1)
+        volatility = np.std(diffs, axis=1)
+
+        mean_ = self._safe_nanmean(X, axis=1)
+        std_ = self._safe_nanstd(X, axis=1)
+        cv = np.where(mean_ != 0, std_ / (np.abs(mean_) + 1e-9), 0.0)
+
+        feats = np.column_stack([volatility, cv])
+        feats = np.nan_to_num(feats, nan=0.0, posinf=0.0, neginf=0.0)
+        return feats.astype(np.float32)
+
+    def compute_weekend_patterns(self, X: np.ndarray) -> np.ndarray:
+        """
+        Compute differences between weekday and weekend consumption.
+        Assumes day 0 is a Monday. Days 5, 6 mod 7 are weekends.
+
+        Features:
+          * weekday_mean
+          * weekend_mean
+          * weekend_ratio: weekend_mean / weekday_mean
+
+        Returns
+        -------
+        np.ndarray, shape (n_samples, 3)
+        """
+        X = self._validate_input(X)
+        n_samples, n_days = X.shape
+        logger.debug("Computing weekend patterns …")
+
+        t = np.arange(n_days)
+        is_weekend = (t % 7) >= 5
+        is_weekday = ~is_weekend
+
+        weekday_vals = X[:, is_weekday]
+        weekend_vals = X[:, is_weekend]
+
+        wd_mean = self._safe_nanmean(weekday_vals, axis=1) if weekday_vals.size > 0 else np.zeros(n_samples)
+        we_mean = self._safe_nanmean(weekend_vals, axis=1) if weekend_vals.size > 0 else np.zeros(n_samples)
+
+        we_ratio = np.where(wd_mean != 0, we_mean / (wd_mean + 1e-9), 0.0)
+
+        feats = np.column_stack([wd_mean, we_mean, we_ratio])
+        feats = np.nan_to_num(feats, nan=0.0, posinf=0.0, neginf=0.0)
+        return feats.astype(np.float32)
+
+    def compute_zero_periods(self, X: np.ndarray) -> np.ndarray:
+        """
+        Compute features related to zero consumption.
+
+        Features:
+          * zero_count: total number of days with 0 consumption
+          * max_consecutive_zeros: longest streak of 0 consumption
+
+        Returns
+        -------
+        np.ndarray, shape (n_samples, 2)
+        """
+        X = self._validate_input(X)
+        n_samples, n_days = X.shape
+        logger.debug("Computing zero periods …")
+
+        X_zero = (np.nan_to_num(X, nan=-1.0) == 0.0).astype(int)
+        zero_count = X_zero.sum(axis=1)
+
+        max_consecutive = np.zeros(n_samples, dtype=np.float32)
+        for i in range(n_samples):
+            # Count longest streak of 1s in X_zero[i]
+            row = X_zero[i]
+            if not np.any(row):
+                continue
+            padded = np.pad(row, (1, 1), 'constant')
+            diffs = np.diff(padded)
+            starts = np.where(diffs == 1)[0]
+            ends = np.where(diffs == -1)[0]
+            max_consecutive[i] = np.max(ends - starts)
+
+        feats = np.column_stack([zero_count, max_consecutive])
+        return feats.astype(np.float32)
+
+    def compute_spike_drop_indicators(self, X: np.ndarray) -> np.ndarray:
+        """
+        Count sudden spikes and drops.
+        A spike is when the value is > mean + 3*std.
+        A drop is when the value is < mean - 3*std (and value >= 0).
+
+        Returns
+        -------
+        np.ndarray, shape (n_samples, 2)
+        """
+        X = self._validate_input(X)
+        n_samples, _ = X.shape
+        logger.debug("Computing spike/drop indicators …")
+
+        mean_ = self._safe_nanmean(X, axis=1).reshape(-1, 1)
+        std_ = self._safe_nanstd(X, axis=1).reshape(-1, 1)
+
+        spike_thresh = mean_ + 3 * std_
+        drop_thresh = mean_ - 3 * std_
+
+        spikes = np.nansum(X > spike_thresh, axis=1)
+        drops = np.nansum((X < drop_thresh) & (X >= 0), axis=1)
+
+        feats = np.column_stack([spikes, drops])
+        return feats.astype(np.float32)
+
+    def compute_entropy(self, X: np.ndarray) -> np.ndarray:
+        """
+        Compute Shannon entropy of the consumption distribution.
+
+        Returns
+        -------
+        np.ndarray, shape (n_samples, 1)
+        """
+        X = self._validate_input(X)
+        n_samples, n_days = X.shape
+        logger.debug("Computing entropy features …")
+
+        entropies = np.zeros(n_samples, dtype=np.float32)
+        for i in range(n_samples):
+            row = np.nan_to_num(X[i], nan=0.0)
+            row = row[row > 0]
+            if len(row) > 0:
+                p = row / np.sum(row)
+                entropies[i] = -np.sum(p * np.log(p + 1e-9))
+
+        return entropies.reshape(-1, 1)
+
+    # ------------------------------------------------------------------
     # _compute_all_features  (internal)
     # ------------------------------------------------------------------
 
@@ -724,6 +871,27 @@ class FeatureEngineer:
                 names.append(f"fft_freq_{k}")
             names.append("fft_spectral_energy")
             logger.debug("FFT features: %d", fft_feats.shape[1])
+
+        # 9. Advanced features
+        vol_cv = self.compute_volatility_cv(X)
+        parts.append(vol_cv)
+        names.extend(["volatility", "cv"])
+
+        weekend = self.compute_weekend_patterns(X)
+        parts.append(weekend)
+        names.extend(["weekday_mean", "weekend_mean", "weekend_ratio"])
+
+        zeros = self.compute_zero_periods(X)
+        parts.append(zeros)
+        names.extend(["zero_count", "max_consecutive_zeros"])
+
+        spikes = self.compute_spike_drop_indicators(X)
+        parts.append(spikes)
+        names.extend(["spike_count", "drop_count"])
+
+        entropy = self.compute_entropy(X)
+        parts.append(entropy)
+        names.append("entropy")
 
         return parts, names
 

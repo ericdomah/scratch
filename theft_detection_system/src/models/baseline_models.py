@@ -53,8 +53,9 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from sklearn.model_selection import StratifiedKFold
-from sklearn.svm import SVC
+from sklearn.svm import SVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.feature_selection import SelectKBest, mutual_info_classif, RFE
 from sklearn.utils.class_weight import compute_sample_weight
 from xgboost import XGBClassifier
 
@@ -359,10 +360,12 @@ class BaselineModelSuite:
 
         # 8. SVM
         svm_params = _p("svm")
-        # Ensure probability=True so predict_proba is available
-        svm_params.setdefault("probability", True)
-        models["svm"] = SVC(**svm_params)
-        logger.debug("Built SVC with params: %s", svm_params)
+        # Extract params for LinearSVC, then wrap
+        if "probability" in svm_params:
+            del svm_params["probability"]
+        base_svm = LinearSVC(**svm_params)
+        models["svm"] = CalibratedClassifierCV(base_svm, method="sigmoid", cv=5)
+        logger.debug("Built LinearSVC wrapped in CalibratedClassifierCV with params: %s", svm_params)
 
         logger.info("All %d models built successfully.", len(models))
         return models
@@ -538,6 +541,191 @@ class BaselineModelSuite:
             list(self.trained_models.keys()),
         )
         return self.trained_models
+
+    # ------------------------------------------------------------------
+    # Hyperparameter Tuning (Optuna)
+    # ------------------------------------------------------------------
+
+    def tune_model(
+        self,
+        name: str,
+        X_train: ArrayLike,
+        y_train: ArrayLike,
+        X_val: ArrayLike,
+        y_val: ArrayLike,
+        class_weights: Optional[Dict[int, float]] = None,
+    ) -> Any:
+        """
+        Use Optuna to tune hyperparameters for the specified model.
+        Optimizes for F1 score on the validation set.
+        """
+        if name not in ["xgboost", "lightgbm", "catboost", "logistic_regression"]:
+            logger.info("Tuning not implemented/requested for '%s'. Skipping.", name)
+            return self.models[name]
+
+        logger.info("Starting Optuna tuning for '%s' …", name)
+        
+        X_train_arr = np.array(X_train)
+        y_train_arr = np.array(y_train)
+        X_val_arr = np.array(X_val)
+        y_val_arr = np.array(y_val)
+        
+        sample_weights = None
+        if class_weights:
+            sample_weights = compute_sample_weight(class_weight=class_weights, y=y_train_arr)
+
+        def objective(trial: optuna.Trial) -> float:
+            if name == "xgboost":
+                params = {
+                    "n_estimators": trial.suggest_int("n_estimators", 100, 1000),
+                    "max_depth": trial.suggest_int("max_depth", 3, 10),
+                    "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.3, log=True),
+                    "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+                    "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+                    "min_child_weight": trial.suggest_int("min_child_weight", 1, 10),
+                    "gamma": trial.suggest_float("gamma", 0.0, 5.0),
+                    "objective": "binary:logistic",
+                    "eval_metric": "aucpr",
+                    "tree_method": "hist",
+                    "random_state": 42,
+                    "n_jobs": -1
+                }
+                model = XGBClassifier(**params)
+                if sample_weights is not None:
+                    model.fit(X_train_arr, y_train_arr, sample_weight=sample_weights, eval_set=[(X_val_arr, y_val_arr)], verbose=False)
+                else:
+                    model.fit(X_train_arr, y_train_arr, eval_set=[(X_val_arr, y_val_arr)], verbose=False)
+                    
+            elif name == "lightgbm":
+                params = {
+                    "n_estimators": trial.suggest_int("n_estimators", 100, 1000),
+                    "max_depth": trial.suggest_int("max_depth", 3, 12),
+                    "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.3, log=True),
+                    "num_leaves": trial.suggest_int("num_leaves", 20, 150),
+                    "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+                    "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+                    "class_weight": "balanced",
+                    "random_state": 42,
+                    "n_jobs": -1,
+                    "verbose": -1
+                }
+                model = LGBMClassifier(**params)
+                if sample_weights is not None:
+                    model.fit(X_train_arr, y_train_arr, sample_weight=sample_weights, eval_set=[(X_val_arr, y_val_arr)])
+                else:
+                    model.fit(X_train_arr, y_train_arr, eval_set=[(X_val_arr, y_val_arr)])
+                    
+            elif name == "catboost":
+                params = {
+                    "iterations": trial.suggest_int("iterations", 100, 1000),
+                    "depth": trial.suggest_int("depth", 4, 10),
+                    "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.3, log=True),
+                    "l2_leaf_reg": trial.suggest_float("l2_leaf_reg", 1e-1, 10.0, log=True),
+                    "eval_metric": "F1",
+                    "random_seed": 42,
+                    "verbose": 0,
+                    "auto_class_weights": "Balanced"
+                }
+                model = CatBoostClassifier(**params)
+                cb_fit_kwargs = {"eval_set": (X_val_arr, y_val_arr), "use_best_model": True, "early_stopping_rounds": 50}
+                if sample_weights is not None:
+                    cb_fit_kwargs["sample_weight"] = sample_weights
+                model.fit(X_train_arr, y_train_arr, **cb_fit_kwargs)
+                
+            elif name == "logistic_regression":
+                params = {
+                    "C": trial.suggest_float("C", 1e-3, 10.0, log=True),
+                    "solver": trial.suggest_categorical("solver", ["lbfgs", "saga", "liblinear"]),
+                    "max_iter": 5000,
+                    "class_weight": "balanced",
+                    "random_state": 42,
+                }
+                model = LogisticRegression(**params)
+                if sample_weights is not None:
+                    try:
+                        model.fit(X_train_arr, y_train_arr, sample_weight=sample_weights)
+                    except:
+                        model.fit(X_train_arr, y_train_arr)
+                else:
+                    model.fit(X_train_arr, y_train_arr)
+                    
+            # Evaluate on validation set
+            y_val_pred = model.predict(X_val_arr)
+            score = f1_score(y_val_arr, y_val_pred, average="binary", zero_division=0)
+            return score
+
+        optuna_cfg = self.config.get("optuna_tuning", {"n_trials": 100, "direction": "maximize"})
+        n_trials = optuna_cfg.get("n_trials", 100)
+        direction = optuna_cfg.get("direction", "maximize")
+        
+        study = optuna.create_study(direction=direction, sampler=optuna.samplers.TPESampler(seed=42))
+        study.optimize(objective, n_trials=n_trials)
+        
+        logger.info("Best trial for '%s': %s", name, study.best_trial.params)
+        
+        # Re-build and re-train best model
+        best_params = study.best_trial.params
+        
+        if name == "xgboost":
+            best_params.update({"objective": "binary:logistic", "eval_metric": "aucpr", "tree_method": "hist", "random_state": 42, "n_jobs": -1})
+            best_model = XGBClassifier(**best_params)
+        elif name == "lightgbm":
+            best_params.update({"class_weight": "balanced", "random_state": 42, "n_jobs": -1, "verbose": -1})
+            best_model = LGBMClassifier(**best_params)
+        elif name == "catboost":
+            best_params.update({"eval_metric": "F1", "random_seed": 42, "verbose": 0, "auto_class_weights": "Balanced"})
+            best_model = CatBoostClassifier(**best_params)
+        elif name == "logistic_regression":
+            best_params.update({"max_iter": 5000, "class_weight": "balanced", "random_state": 42})
+            best_model = LogisticRegression(**best_params)
+
+        self.models[name] = best_model
+        return self.models[name]
+
+    # ------------------------------------------------------------------
+    # Feature Selection
+    # ------------------------------------------------------------------
+
+    def select_features(
+        self, 
+        X_train: ArrayLike, 
+        y_train: ArrayLike, 
+        method: str = "mutual_info", 
+        k: Union[int, str] = 50
+    ) -> Any:
+        """
+        Fit and return a feature selector.
+        
+        Parameters
+        ----------
+        method : "mutual_info", "select_k_best", "rfe", "xgboost"
+        k : int or "all"
+        """
+        X_arr = np.array(X_train)
+        y_arr = np.array(y_train)
+        
+        if k == "all":
+            k = X_arr.shape[1]
+            
+        logger.info("Selecting top %s features using %s …", k, method)
+        
+        if method in ["mutual_info", "select_k_best"]:
+            selector = SelectKBest(score_func=mutual_info_classif, k=k)
+            selector.fit(X_arr, y_arr)
+        elif method == "rfe":
+            estimator = DecisionTreeClassifier(max_depth=5, random_state=42)
+            selector = RFE(estimator, n_features_to_select=k, step=0.1)
+            selector.fit(X_arr, y_arr)
+        elif method == "xgboost":
+            # Using SelectFromModel as XGBoost feature selection
+            from sklearn.feature_selection import SelectFromModel
+            estimator = XGBClassifier(n_estimators=100, max_depth=3, random_state=42, n_jobs=-1)
+            estimator.fit(X_arr, y_arr)
+            selector = SelectFromModel(estimator, max_features=k, prefit=True)
+        else:
+            raise ValueError(f"Unknown feature selection method: {method}")
+            
+        return selector
 
     # ------------------------------------------------------------------
     # Evaluation
