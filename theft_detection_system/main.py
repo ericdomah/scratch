@@ -351,8 +351,7 @@ def run_deep_mode(
         model      = model,
         config     = config,
         device     = device,
-        output_dir = output_dir,
-        model_name = model_name,
+        output_dir = f"{output_dir}/models/{model_name}",
     )
     history = trainer.train(
         train_loader = train_loader,
@@ -602,6 +601,135 @@ def run_explain_mode(
 
 
 # =============================================================================
+#  Ensemble Mode
+# =============================================================================
+
+def run_ensemble_mode(
+    config: dict,
+    logger: logging.Logger,
+    output_dir: str,
+    device: torch.device,
+) -> None:
+    logger.info(f"\n{'='*60}")
+    logger.info(f"  MODE: ENSEMBLE MODELS")
+    logger.info(f"{'='*60}")
+
+    import joblib
+    from src.models.ensemble.ensemble_models import EnsembleModels
+
+    # Load both datasets (FE for ML, raw for DL)
+    X_train_fe, X_val_fe, X_test_fe, y_train, y_val, y_test, _ = run_data_pipeline(
+        config, logger, feature_engineering=True
+    )
+    X_train_raw, X_val_raw, X_test_raw, _, _, _, _ = run_data_pipeline(
+        config, logger, feature_engineering=False
+    )
+    
+    # Handle imbalance for training
+    X_train_fe_r, y_train_fe_r, _ = run_imbalance_handling(X_train_fe, y_train, config, logger)
+    X_train_raw_r, y_train_raw_r, _ = run_imbalance_handling(X_train_raw, y_train, config, logger)
+
+    ensemble = EnsembleModels(config={"device": device, "random_state": config.get("project", {}).get("seed", 42)})
+
+    # Load baseline models
+    ml_models = {}
+    for name in ["xgboost", "lightgbm", "random_forest"]:
+        path = f"{output_dir}/models/{name}.pkl"
+        if os.path.isfile(path):
+            ml_models[name] = joblib.load(path)
+            
+    if "xgboost" not in ml_models:
+        logger.error("XGBoost model not found. Please run --mode baseline first.")
+        return
+
+    # Load DL models
+    dl_models = {}
+    dl_names = ["cnn_lstm", "transformer"]
+    input_dim = X_train_raw.shape[1]
+    
+    for name in dl_names:
+        ckpt_path = f"{output_dir}/models/{name}/checkpoint_best.pt"
+        if os.path.isfile(ckpt_path):
+            model = _build_dl_model(name, input_dim=input_dim, seq_len=1, config=config)
+            state = torch.load(ckpt_path, map_location=device)
+            model.load_state_dict(state["model_state_dict"])
+            model = model.to(device)
+            model.eval()
+            dl_models[name] = model
+            
+    if not dl_models:
+        logger.error("Deep learning models not found. Please run --mode deep first.")
+        return
+
+    # Compute individual probabilities
+    from src.models.ensemble.ensemble_models import _get_proba
+    
+    probs_val = {}
+    probs_test = {}
+    
+    # ML probabilities
+    for name, model in ml_models.items():
+        probs_val[name] = _get_proba(model, X_val_fe)
+        probs_test[name] = _get_proba(model, X_test_fe)
+        
+    # DL probabilities
+    for name, model in dl_models.items():
+        probs_val[name] = _get_proba(model, X_val_raw, device)
+        probs_test[name] = _get_proba(model, X_test_raw, device)
+
+    # 1. XGBoost + CNN-LSTM
+    ensemble_preds = {}
+    if "cnn_lstm" in dl_models:
+        p_xgb = probs_test["xgboost"]
+        p_cnn = probs_test["cnn_lstm"]
+        ensemble_preds["XGBoost + CNN-LSTM"] = 0.5 * p_xgb + 0.5 * p_cnn
+
+    # 2. XGBoost + Transformer
+    if "transformer" in dl_models:
+        p_xgb = probs_test["xgboost"]
+        p_tfm = probs_test["transformer"]
+        ensemble_preds["XGBoost + Transformer"] = 0.5 * p_xgb + 0.5 * p_tfm
+
+    # 3. Soft Voting (all loaded models)
+    all_test_probs = list(probs_test.values())
+    ensemble_preds["Soft Voting (All)"] = np.mean(all_test_probs, axis=0)
+
+    # 4. Weighted Ensemble
+    # We optimize weights on validation set
+    all_models = list(ml_models.values()) + list(dl_models.values())
+    
+    # Prepare val matrix for weighted optimization
+    val_matrix = np.column_stack(list(probs_val.values()))
+    test_matrix = np.column_stack(list(probs_test.values()))
+    
+    from scipy.optimize import minimize
+    from sklearn.metrics import f1_score
+    
+    def objective(w_raw):
+        w = np.exp(w_raw) / np.sum(np.exp(w_raw))
+        blended = (val_matrix * w).sum(axis=1)
+        preds = (blended >= 0.5).astype(int)
+        return -f1_score(y_val, preds, zero_division=0)
+        
+    res = minimize(objective, np.ones(len(all_models))/len(all_models), method="Nelder-Mead")
+    w_opt = np.exp(res.x) / np.sum(np.exp(res.x))
+    ensemble_preds["Weighted Ensemble"] = (test_matrix * w_opt).sum(axis=1)
+
+    # 5. Compare and generate table
+    comparison_df = ensemble.compare_ensembles(X_test_fe, y_test, ensemble_predictions=ensemble_preds)
+    
+    logger.info("\n" + "=" * 60)
+    logger.info("  ENSEMBLE MODEL COMPARISON TABLE")
+    logger.info("=" * 60)
+    logger.info("\n" + comparison_df.to_string())
+
+    os.makedirs(f"{output_dir}/reports", exist_ok=True)
+    out_path = f"{output_dir}/reports/ensemble_comparison.csv"
+    comparison_df.to_csv(out_path, index=False)
+    logger.info(f"Saved ensemble comparison to: {out_path}")
+
+
+# =============================================================================
 #  CLI Entry Point
 # =============================================================================
 
@@ -612,7 +740,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode", type=str, default="baseline",
-        choices=["baseline", "deep", "all", "tune", "explain", "evaluate"],
+        choices=["baseline", "deep", "ensemble", "all", "tune", "explain", "evaluate"],
         help="Pipeline mode to run",
     )
     parser.add_argument(
@@ -708,6 +836,9 @@ def main() -> None:
     elif args.mode == "tune":
         run_tune_mode(args.model, config, logger, args.output_dir, device)
 
+    elif args.mode == "ensemble":
+        run_ensemble_mode(config, logger, args.output_dir, device)
+
     elif args.mode == "explain":
         run_explain_mode(config, logger, args.output_dir)
 
@@ -720,6 +851,7 @@ def main() -> None:
                 run_deep_mode(mdl, config, logger, args.output_dir, device)
             except Exception as e:
                 logger.error(f"DL model {mdl} failed: {e}", exc_info=True)
+        run_ensemble_mode(config, logger, args.output_dir, device)
         run_explain_mode(config, logger, args.output_dir)
 
     elif args.mode == "evaluate":
