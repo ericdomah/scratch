@@ -43,7 +43,7 @@ inference_engine = InferenceEngine(
     real_dl_path='../gridguard_real_data/models/gridguard_sgcc_best.pth',
     real_xgb_path='../gridguard_real_data/models/xgboost_sgcc_edge.pkl'
 )
-xai_engine = XAIEngine(inference_engine.model)
+xai_engine = XAIEngine(inference_engine.model_real)
 
 # Define request schema matching context-aware capabilities
 class PredictionRequest(BaseModel):

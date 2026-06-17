@@ -14,10 +14,18 @@ sys.path.append(os.path.join(ROOT_DIR, "gridguard"))
 sys.path.append(os.path.join(ROOT_DIR, "gridguard", "backend"))
 sys.path.append(os.path.join(ROOT_DIR, "gridguard_real_data"))
 
-try:
-    from preprocessing.sgcc_pipeline import compute_tabular_features
-except ImportError:
-    pass
+from scipy.stats import skew as scipy_skew
+
+def compute_tabular_features(X_np: np.ndarray) -> np.ndarray:
+    kwh = X_np[:, :, 0]
+    gli = X_np[:, :, 1]
+    var_kwh  = kwh.var(axis=1)
+    skw_kwh  = np.apply_along_axis(scipy_skew, 1, kwh)
+    mean_kwh = np.where(kwh.mean(axis=1) > 0, kwh.mean(axis=1), 1e-8)
+    par_kwh  = kwh.max(axis=1) / mean_kwh
+    mean_gli = gli.mean(axis=1)
+    std_gli  = gli.std(axis=1)
+    return np.column_stack([var_kwh, skw_kwh, par_kwh, mean_gli, std_gli]).astype(np.float32)
 
 # Load config
 CONFIG_PATH = os.path.join(ROOT_DIR, "gridguard", "config.yaml")
@@ -52,8 +60,10 @@ class InferenceEngine:
         hidden_dim = config["model"]["hidden_dim"] # 64
         
         # 1. Initialize Universal Hybrid (DL) models
+        from legacy_model import GridGuardUniversalHybridLegacy
+        
         self.model_syn = GridGuardUniversalHybrid(window_size=window_size, input_dim=input_dim, hidden_dim=hidden_dim).to(device)
-        self.model_real = GridGuardUniversalHybrid(window_size=window_size, input_dim=input_dim, hidden_dim=hidden_dim).to(device)
+        self.model_real = GridGuardUniversalHybridLegacy(input_dim=input_dim, hidden_dim=64).to(device)
         
         # Load Synthetic DL
         if os.path.exists(syn_dl_path):

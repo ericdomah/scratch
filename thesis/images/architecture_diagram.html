@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GridGuard Architecture Diagram</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f8f9fa; margin: 0; }
+        .mermaid { background-color: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="mermaid">
+graph TD
+    %% Data Sources
+    A1((Smart Meters)) -->|15-min Telemetry| B
+    A2((Distribution Transformer)) -->|Aggregated Load| B
+    
+    subgraph "Grid Edge (Substation)"
+        B[Data Ingestion & Preprocessing] --> C
+        C[Context-Aware Intelligence Layer] -->|kWh + GLI Tensor| D
+        D{XGBoost Statistical Gatekeeper}
+        D -->|Normal (99%)| E[Local Storage]
+        D -->|Anomalous (1%)| F((Cloud Transmission))
+    end
+    
+    subgraph "Central Cloud (Forensic Analysis)"
+        F --> G[GridGuard Meta-Ensemble]
+        G --> H1[TCN: Local Features]
+        G --> H2[Bi-LSTM: Sequential Dependencies]
+        H1 --> I[Transformer Encoder: Global Attention]
+        H2 --> I
+        I --> J[Fully Connected Layer]
+        J --> K{Threshold & Classification}
+    end
+    
+    subgraph "Utility SOC Dashboard"
+        K -->|Theft Prob > 0.60| L[XAI Engine: Temporal Heatmap]
+        K -->|Benign| M[Grid Loss Accounting]
+        L --> N((Field Technician Alert))
+    end
+
+    classDef edge fill:#f9f2ec,stroke:#d9b38c,stroke-width:2px;
+    classDef cloud fill:#e6f3ff,stroke:#99ccff,stroke-width:2px;
+    classDef dash fill:#e6ffe6,stroke:#99ff99,stroke-width:2px;
+    
+    class B,C,D edge;
+    class G,H1,H2,I,J,K cloud;
+    class L,M dash;
+    </div>
+</body>
+</html>
